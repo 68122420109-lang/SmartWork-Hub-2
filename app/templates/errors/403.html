@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}403 - ไม่มีสิทธิ์เข้าถึง{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="card dashboard-card text-center py-5">
+    <div class="card-body">
+      <i class="bi bi-shield-lock fs-1 text-danger"></i>
+      <h1 class="display-4 mt-3">403</h1>
+      <h3>คุณไม่มีสิทธิ์เข้าถึงหน้านี้</h3>
+      <p class="text-muted">กรุณาเข้าสู่ระบบด้วยบัญชีที่มีสิทธิ์หรือกลับไปที่หน้าหลัก</p>
+      <a href="{{ url_for('main.home') }}" class="btn btn-primary">กลับหน้าหลัก</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

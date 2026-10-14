@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }} | SmartWork Hub{% endblock %}
+{% block page_heading %}ข้อมูลพนักงาน{% endblock %}
+{% block content %}
+<div class="dashboard-welcome"><div><span class="eyebrow">ข้อมูลบุคลากร</span><h1>{{ title }}</h1><p>กรอกข้อมูลบุคลากรให้ครบถ้วน</p></div><a class="btn btn-outline-secondary" href="{{ url_for('employees.index') }}">กลับหน้าพนักงาน</a></div>
+<div class="panel-card form-card"><form method="post" novalidate>{{ form.hidden_tag() }}
+  <div class="row g-3">
+    {% for field in [form.employee_code, form.first_name, form.last_name, form.email, form.phone] %}<div class="col-md-6"><label class="form-label">{{ field.label.text }}</label>{{ field(class="form-control", placeholder=field.label.text) }}{% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}</div>{% endfor %}
+    <div class="col-md-6"><label class="form-label">{{ form.department_id.label.text }}</label>{{ form.department_id(class="form-select") }}{% for error in form.department_id.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</div>
+    <div class="col-md-6"><label class="form-label">{{ form.position.label.text }}</label>{{ form.position(class="form-control", list="position-options", placeholder="เช่น นักพัฒนาซอฟต์แวร์") }}<datalist id="position-options">{% for position in positions %}<option value="{{ position.name }}">{% endfor %}</datalist>{% for error in form.position.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</div>
+    {% for field in [form.hire_date, form.work_start_time, form.work_end_time, form.status, form.user_id] %}<div class="col-md-6"><label class="form-label">{{ field.label.text }}</label>{{ field(class="form-select" if field.type == 'SelectField' else "form-control", type="date" if field.type == 'DateField' else "text") }}{% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</div>{% endfor %}
+  </div>
+  <div class="d-flex gap-2 mt-4">{{ form.submit(class="btn btn-primary") }}<a class="btn btn-light" href="{{ url_for('employees.index') }}">ยกเลิก</a></div>
+</form></div>
+{% endblock %}

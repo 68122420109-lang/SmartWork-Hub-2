@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% block title %}ตั้งค่าระบบ | SmartWork Hub{% endblock %}
+{% block page_heading %}ตั้งค่าระบบ{% endblock %}
+{% block content %}
+<div class="dashboard-welcome"><div><span class="eyebrow">การตั้งค่าองค์กร</span><h1>ตั้งค่าระบบ</h1><p>กำหนดเวลาทำงานและนโยบายการลา</p></div></div>
+<div class="panel-card form-card"><form method="post">{{ form.hidden_tag() }}<div class="row g-3">{% for field in [form.company_name, form.default_work_start, form.default_work_end, form.grace_period_minutes, form.annual_vacation_quota, form.sick_leave_quota, form.personal_leave_quota] %}<div class="col-md-6"><label class="form-label">{{ field.label.text }}</label>{{ field(class="form-control", type="time" if field.name in ['default_work_start','default_work_end'] else "number" if field.type == 'IntegerField' else "text") }}{% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}</div>{% endfor %}</div><button class="btn btn-primary mt-4">{{ form.submit.label.text }}</button></form></div>
+{% endblock %}

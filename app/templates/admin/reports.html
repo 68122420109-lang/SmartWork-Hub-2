@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block title %}รายงาน | SmartWork Hub{% endblock %}
+{% block page_heading %}รายงานภาพรวม{% endblock %}
+{% block content %}
+<div class="dashboard-welcome"><div><span class="eyebrow">ข้อมูลบุคลากร</span><h1>รายงานและข้อมูลเชิงลึก</h1><p>สรุปข้อมูลที่บันทึกอยู่ในระบบ</p></div></div>
+<div class="row g-3 mb-4"><div class="col-md-3"><div class="metric-card metric-indigo"><div class="metric-top">พนักงาน</div><strong>{{ employee_count }}</strong></div></div><div class="col-md-3"><div class="metric-card metric-blue"><div class="metric-top">รายการลงเวลา</div><strong>{{ attendance_count }}</strong></div></div><div class="col-md-3"><div class="metric-card metric-cyan"><div class="metric-top">บันทึกมาสาย</div><strong>{{ late_count }}</strong></div></div><div class="col-md-3"><div class="metric-card metric-violet"><div class="metric-top">คำขอลา</div><strong>{{ leave_count }}</strong></div></div></div>
+<div class="row g-4"><div class="col-md-6"><div class="panel-card"><span class="feature-icon blue"><i class="bi bi-clock-history"></i></span><h2 class="h5">รายงานการลงเวลา</h2><p class="text-muted">กรองตามพนักงาน แผนก สถานะ และช่วงวันที่ พร้อมดาวน์โหลดรายงาน</p><a class="btn btn-outline-primary" href="{{ url_for('attendance.records') }}">เปิดรายงานเวลา</a></div></div><div class="col-md-6"><div class="panel-card"><span class="feature-icon violet"><i class="bi bi-calendar2-heart"></i></span><h2 class="h5">รายงานคำขอลา</h2><p class="text-muted">ติดตามคำขอ อนุมัติหรือปฏิเสธ และดาวน์โหลดข้อมูลการลา</p><a class="btn btn-outline-primary" href="{{ url_for('leave.index') }}">เปิดคำขอลา</a></div></div></div>
+{% endblock %}

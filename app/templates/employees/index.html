@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}พนักงาน | SmartWork Hub{% endblock %}
+{% block page_heading %}จัดการข้อมูลพนักงาน{% endblock %}
+{% block content %}
+<div class="dashboard-welcome"><div><span class="eyebrow">ทะเบียนบุคลากร</span><h1>พนักงาน</h1><p>จัดการข้อมูลบุคลากรและค้นหาสมาชิกในทีม</p></div>
+{% if current_user.is_hr_or_admin %}
+    <a href="{{ url_for('employees.create') }}" class="btn btn-primary"><i class="bi bi-plus-lg me-2"></i>เพิ่มพนักงาน</a>
+{% endif %}
+</div>
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3"><div class="metric-card metric-indigo"><div class="metric-top">พนักงานทั้งหมด<i class="bi bi-people"></i></div><strong>{{ total_employees }}</strong><small>รายการในระบบ</small></div></div>
+  <div class="col-6 col-lg-3"><div class="metric-card metric-blue"><div class="metric-top">ปฏิบัติงาน<i class="bi bi-person-check"></i></div><strong>{{ active_count }}</strong><small>สถานะทำงานอยู่</small></div></div>
+  <div class="col-6 col-lg-3"><div class="metric-card metric-cyan"><div class="metric-top">ทดลองงาน<i class="bi bi-person-workspace"></i></div><strong>{{ probation_count }}</strong><small>สถานะทดลองงาน</small></div></div>
+  <div class="col-6 col-lg-3"><div class="metric-card metric-violet"><div class="metric-top">ลาออก<i class="bi bi-person-dash"></i></div><strong>{{ resigned_count }}</strong><small>ประวัติพนักงาน</small></div></div>
+</div>
+<div class="panel-card">
+  <form class="row g-2 align-items-end mb-4" method="get">
+    <div class="col-lg-4"><label class="form-label">ค้นหาพนักงาน</label><input name="q" class="form-control" value="{{ search }}" placeholder="ชื่อ รหัส อีเมล หรือตำแหน่ง"></div>
+    <div class="col-md-4 col-lg-2"><label class="form-label">แผนก</label><select name="department_id" class="form-select"><option value="">ทุกแผนก</option>{% for department in departments %}<option value="{{ department.id }}" {{ 'selected' if selected_dept == department.id }}>{{ department.name }}</option>{% endfor %}</select></div>
+    <div class="col-md-4 col-lg-2"><label class="form-label">ตำแหน่ง</label><select name="position" class="form-select"><option value="">ทุกตำแหน่ง</option>{% for position in positions %}<option {{ 'selected' if selected_position == position }}>{{ position }}</option>{% endfor %}</select></div>
+    <div class="col-md-4 col-lg-2"><label class="form-label">สถานะ</label><select name="status" class="form-select"><option value="">ทุกสถานะ</option><option value="Active" {{ 'selected' if selected_status == 'Active' }}>ทำงานอยู่</option><option value="Probation" {{ 'selected' if selected_status == 'Probation' }}>ทดลองงาน</option><option value="Resigned" {{ 'selected' if selected_status == 'Resigned' }}>ลาออก</option></select></div>
+    <div class="col-lg-2 d-grid"><button class="btn btn-outline-primary"><i class="bi bi-search me-1"></i>ค้นหา</button></div>
+  </form>
+  <div class="table-responsive"><table class="table align-middle"><thead><tr><th>พนักงาน</th><th>รหัส</th><th>แผนก / ตำแหน่ง</th><th>อีเมล</th><th>สถานะ</th><th></th></tr></thead><tbody>
+  {% for employee in employees.items %}<tr><td><div class="d-flex align-items-center gap-2"><span class="user-avatar">{{ employee.initials }}</span><a class="fw-semibold text-decoration-none text-dark" href="{{ url_for('employees.detail', emp_id=employee.id) }}">{{ employee.full_name }}</a></div></td><td>{{ employee.employee_code }}</td><td>{{ employee.department.name if employee.department else '-' }}<small class="d-block text-muted">{{ employee.position }}</small></td><td>{{ employee.email }}</td><td><span class="badge rounded-pill {{ employee.status_badge_class }}">{{ employee.status_display }}</span></td><td><a class="btn btn-sm btn-light" href="{{ url_for('employees.detail', emp_id=employee.id) }}" title="ดูรายละเอียด"><i class="bi bi-arrow-up-right"></i></a></td></tr>
+  {% else %}<tr><td colspan="6"><div class="empty-inline"><i class="bi bi-person-exclamation"></i>ไม่พบข้อมูลพนักงานที่ตรงกับการค้นหา</div></td></tr>{% endfor %}
+  </tbody></table></div>
+  {% if employees.pages > 1 %}<nav aria-label="แบ่งหน้า"><ul class="pagination justify-content-end mb-0">{% for page_num in employees.iter_pages() %}{% if page_num %}<li class="page-item {{ 'active' if page_num == employees.page }}"><a class="page-link" href="{{ url_for('employees.index', page=page_num, q=search, department_id=selected_dept, position=selected_position, status=selected_status) }}">{{ page_num }}</a></li>{% else %}<li class="page-item disabled"><span class="page-link">…</span></li>{% endif %}{% endfor %}</ul></nav>{% endif %}
+</div>
+{% endblock %}

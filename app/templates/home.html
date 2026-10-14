@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}แดชบอร์ด | SmartWork Hub{% endblock %}
+{% block page_heading %}แดชบอร์ดภาพรวม{% endblock %}
+
+{% block content %}
+{% if not dashboard %}
+  <section class="welcome-hero">
+    <div class="hero-orb orb-one"></div><div class="hero-orb orb-two"></div>
+    <div class="hero-copy">
+      <span class="eyebrow"><i class="bi bi-stars me-1"></i> PEOPLE · TIME · GROWTH</span>
+      <h1>ดูแลทีมของคุณ<br><span>ให้เติบโตไปด้วยกัน</span></h1>
+      <p>แพลตฟอร์มบริหารบุคลากร ลงเวลา และจัดการวันลา สำหรับทีมยุคใหม่</p>
+      <a class="btn btn-light btn-lg" href="{{ url_for('auth.register') }}">เริ่มต้นใช้งาน <i class="bi bi-arrow-right ms-2"></i></a>
+    </div>
+    <div class="hero-decoration"><div class="hero-icon"><i class="bi bi-people-fill"></i></div><span class="float-chip"><i class="bi bi-check-circle-fill"></i> ทำงานเป็นทีม</span><span class="float-chip chip-alt"><i class="bi bi-lightning-charge-fill"></i> ทำงานคล่องตัว</span></div>
+  </section>
+  <section class="row g-4 mt-4">
+    <div class="col-md-4"><div class="feature-card"><span class="feature-icon blue"><i class="bi bi-person-lines-fill"></i></span><h3>จัดการบุคลากร</h3><p>ข้อมูลพนักงาน ตำแหน่ง และแผนกในที่เดียว</p></div></div>
+    <div class="col-md-4"><div class="feature-card"><span class="feature-icon violet"><i class="bi bi-clock-history"></i></span><h3>เวลาและการลา</h3><p>ลงเวลาเข้าออกและติดตามคำขอลาอย่างชัดเจน</p></div></div>
+    <div class="col-md-4"><div class="feature-card"><span class="feature-icon cyan"><i class="bi bi-bar-chart-line"></i></span><h3>ข้อมูลเพื่อทีม</h3><p>ภาพรวมการทำงานและรายงานจากข้อมูลจริง</p></div></div>
+  </section>
+{% else %}
+  <div class="dashboard-welcome">
+    <div>    <span class="eyebrow">ภาพรวมการบริหารบุคลากร</span><h1>สวัสดี, {{ current_user.full_name.split(' ')[0] }} <span class="wave">✦</span></h1><p>ภาพรวมองค์กร ณ วันที่ {{ today|thai_date }} เวลา {{ thai_clock }} (ประเทศไทย)</p></div>
+    {% if current_user.is_hr_or_admin %}<a href="{{ url_for('employees.create') }}" class="btn btn-primary btn-lg"><i class="bi bi-plus-lg me-2"></i>เพิ่มพนักงาน</a>{% else %}<a href="{{ url_for('attendance.check_in_out') }}" class="btn btn-primary btn-lg"><i class="bi bi-clock me-2"></i>ลงเวลาทำงาน</a>{% endif %}
+  </div>
+
+  <section class="row g-3 metric-grid">
+    <div class="col-6 col-xl-3"><article class="metric-card metric-indigo"><div class="metric-top"><span>พนักงานทั้งหมด</span><i class="bi bi-people-fill"></i></div><strong>{{ total_employees }}</strong><small>รายการพนักงานในฐานข้อมูล</small><div class="metric-spark"><i class="bi bi-arrow-up-right"></i> ข้อมูลปัจจุบัน</div></article></div>
+    <div class="col-6 col-xl-3"><article class="metric-card metric-blue"><div class="metric-top"><span>ลงเวลาวันนี้</span><i class="bi bi-clock-history"></i></div><strong>{{ attendance_today }}</strong><small>รายการลงเวลาของวันนี้</small><div class="metric-spark"><i class="bi bi-calendar-check"></i> {{ today|thai_date }}</div></article></div>
+    <div class="col-6 col-xl-3"><article class="metric-card metric-cyan"><div class="metric-top"><span>มาสายวันนี้</span><i class="bi bi-alarm"></i></div><strong>{{ late_today }}</strong><small>บันทึกสถานะมาสาย</small><div class="metric-spark"><i class="bi bi-activity"></i> จากข้อมูลลงเวลาจริง</div></article></div>
+    <div class="col-6 col-xl-3"><article class="metric-card metric-violet"><div class="metric-top"><span>คำขอลารออนุมัติ</span><i class="bi bi-calendar2-heart"></i></div><strong>{{ pending_leaves }}</strong><small>คำขอที่ยังรอพิจารณา</small><div class="metric-spark"><i class="bi bi-inbox"></i> {% if current_user.is_hr_or_admin %}<a href="{{ url_for('leave.index', status='Pending') }}">ตรวจสอบคำขอ</a>{% else %}ติดตามสถานะได้{% endif %}</div></article></div>
+  </section>
+
+  <section class="row g-4 mt-1">
+    <div class="col-xl-8">
+      <div class="panel-card h-100">
+        <div class="panel-heading"><div><span class="eyebrow">สรุปประจำสัปดาห์</span><h2>สถิติการลงเวลา</h2><p>ภาพรวม 7 วันล่าสุด</p></div><a class="btn btn-sm btn-outline-primary" href="{{ url_for('attendance.records') if current_user.is_hr_or_admin else url_for('attendance.my_history') }}">ดูประวัติ <i class="bi bi-arrow-up-right"></i></a></div>
+        <div class="attendance-chart">
+          {% set peak = namespace(value=1) %}{% for item in attendance_chart %}{% if item.present + item.late > peak.value %}{% set peak.value = item.present + item.late %}{% endif %}{% endfor %}
+          {% for item in attendance_chart %}
+            {% set total = item.present + item.late %}
+            <div class="chart-day"><div class="chart-columns"><span class="bar-present" style="height:{{ (item.present / peak.value * 100)|int }}%" title="ตรงเวลา {{ item.present }}"></span><span class="bar-late" style="height:{{ (item.late / peak.value * 100)|int }}%" title="มาสาย {{ item.late }}"></span></div><small>{{ item.label }}</small></div>
+          {% endfor %}
+        </div>
+        <div class="chart-legend"><span><i class="legend-dot present"></i> ตรงเวลา</span><span><i class="legend-dot late"></i> มาสาย</span></div>
+      </div>
+    </div>
+    <div class="col-xl-4">
+      <div class="panel-card h-100">
+        <div class="panel-heading"><div><span class="eyebrow">เมนูที่ใช้บ่อย</span><h2>ทางลัด</h2></div></div>
+        <div class="quick-links">
+          <a href="{{ url_for('attendance.check_in_out') }}"><span class="quick-icon blue"><i class="bi bi-stopwatch"></i></span><span><strong>ลงเวลาเข้างาน</strong><small>เช็กอินและเช็กเอาต์</small></span><i class="bi bi-chevron-right"></i></a>
+          <a href="{{ url_for('leave.index') }}"><span class="quick-icon violet"><i class="bi bi-calendar-plus"></i></span><span><strong>จัดการวันลา</strong><small>ยื่นคำขอและดูประวัติ</small></span><i class="bi bi-chevron-right"></i></a>
+          {% if current_user.is_hr_or_admin %}<a href="{{ url_for('employees.index') }}"><span class="quick-icon cyan"><i class="bi bi-person-vcard"></i></span><span><strong>ข้อมูลพนักงาน</strong><small>ค้นหาและจัดการทีม</small></span><i class="bi bi-chevron-right"></i></a>{% endif %}
+          {% if current_user.is_admin %}<a href="{{ url_for('admin.settings') }}"><span class="quick-icon pink"><i class="bi bi-gear"></i></span><span><strong>ตั้งค่าระบบ</strong><small>เวลาทำงานและนโยบาย</small></span><i class="bi bi-chevron-right"></i></a>{% endif %}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel-card mt-4">
+    <div class="panel-heading"><div><span class="eyebrow">ความเคลื่อนไหว</span><h2>กิจกรรมล่าสุด</h2><p>บันทึกการดำเนินงานในระบบ</p></div></div>
+    {% if recent_activities %}
+      <div class="activity-list">{% for activity in recent_activities %}<div class="activity-row"><span class="activity-mark"><i class="bi bi-lightning-charge"></i></span><div><strong>{{ {'CREATE_EMPLOYEE':'เพิ่มข้อมูลพนักงาน','UPDATE_EMPLOYEE':'แก้ไขข้อมูลพนักงาน','DELETE_EMPLOYEE':'ลบข้อมูลพนักงาน','CHECK_IN':'ลงเวลาเข้างาน','CHECK_OUT':'ลงเวลาออกงาน','ADJUST_ATTENDANCE':'ปรับปรุงข้อมูลลงเวลา'}.get(activity.action, 'อัปเดตข้อมูล') }}</strong><p>{{ activity.details or 'มีการอัปเดตข้อมูลในระบบ' }}</p></div><time>{{ activity.created_at|thai_datetime }}</time></div>{% endfor %}</div>
+    {% else %}<div class="empty-inline"><i class="bi bi-stars"></i><span>ยังไม่มีกิจกรรมใหม่ เมื่อมีการใช้งานระบบ รายการจะปรากฏที่นี่</span></div>{% endif %}
+  </section>
+{% endif %}
+{% endblock %}

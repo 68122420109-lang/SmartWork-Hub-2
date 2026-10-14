@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }} | SmartWork Hub{% endblock %}
+{% block page_heading %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card dashboard-card shadow-sm">
+      <div class="card-body p-4 p-lg-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h2 class="mb-1">{{ title }}</h2>
+            <p class="text-muted mb-0">กรอกข้อมูลงานให้ครบถ้วนก่อนบันทึก</p>
+          </div>
+          <a href="{{ url_for('main.task_list') }}" class="btn btn-outline-secondary">กลับไปรายการงาน</a>
+        </div>
+
+        <form method="post">
+          {{ form.hidden_tag() }}
+          <div class="row g-3">
+            <div class="col-12">
+              {{ form.title.label(class_='form-label') }}
+              {{ form.title(class_='form-control') }}
+              {% for error in form.title.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+            </div>
+
+            <div class="col-12">
+              {{ form.description.label(class_='form-label') }}
+              {{ form.description(class_='form-control', rows=6) }}
+              {% for error in form.description.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+            </div>
+
+            <div class="col-md-4">
+              {{ form.category.label(class_='form-label') }}
+              {{ form.category(class_='form-control') }}
+              {% for error in form.category.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+            </div>
+
+            <div class="col-md-4">
+              {{ form.assignee.label(class_='form-label') }}
+              {{ form.assignee(class_='form-control') }}
+              {% for error in form.assignee.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+            </div>
+
+            <div class="col-md-4">
+              {{ form.status.label(class_='form-label') }}
+              {{ form.status(class_='form-select') }}
+              {% for error in form.status.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+            </div>
+
+            <div class="col-md-6">
+              {{ form.start_date.label(class_='form-label') }}
+              {{ form.start_date(class_='form-control') }}
+              {% for error in form.start_date.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+            </div>
+
+            <div class="col-md-6">
+              {{ form.due_date.label(class_='form-label') }}
+              {{ form.due_date(class_='form-control') }}
+              {% for error in form.due_date.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-end mt-4 gap-2">
+            <a href="{{ url_for('main.task_list') }}" class="btn btn-outline-secondary">ยกเลิก</a>
+            <button type="submit" class="btn btn-primary">{{ form.submit.label.text }}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

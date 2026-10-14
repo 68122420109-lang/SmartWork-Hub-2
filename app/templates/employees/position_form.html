@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }} | SmartWork Hub{% endblock %}
+{% block page_heading %}แก้ไขตำแหน่งงาน{% endblock %}
+{% block content %}
+<div class="dashboard-welcome"><div><span class="eyebrow">โครงสร้างองค์กร</span><h1>{{ title }}</h1></div></div>
+<div class="panel-card form-card"><form method="post">{{ form.hidden_tag() }}<label class="form-label">{{ form.name.label.text }}</label>{{ form.name(class="form-control mb-3") }}{% for error in form.name.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}<label class="form-label">{{ form.description.label.text }}</label>{{ form.description(class="form-control mb-3") }}<button class="btn btn-primary">{{ form.submit.label.text }}</button><a class="btn btn-light" href="{{ url_for('employees.positions') }}">ยกเลิก</a></form></div>
+{% endblock %}
