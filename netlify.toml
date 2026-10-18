@@ -1,0 +1,5 @@
+# The Flask app (app/) needs a Python server and MySQL, which Netlify does not run.
+# Netlify publishes the static landing page in frontend-static/, reusing the app's CSS/JS.
+[build]
+  command = "mkdir -p frontend-static/static && cp -r app/static/. frontend-static/static/"
+  publish = "frontend-static"
