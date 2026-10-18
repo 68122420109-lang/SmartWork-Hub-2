@@ -4,22 +4,79 @@
 
 {% block content %}
 {% if not dashboard %}
-  <section class="welcome-hero">
-    <div class="hero-orb orb-one"></div><div class="hero-orb orb-two"></div>
-    <div class="hero-copy">
-      <span class="eyebrow"><i class="bi bi-stars me-1"></i> PEOPLE · TIME · GROWTH</span>
-      <h1>ดูแลทีมของคุณ<br><span>ให้เติบโตไปด้วยกัน</span></h1>
-      <p>แพลตฟอร์มบริหารบุคลากร ลงเวลา และจัดการวันลา สำหรับทีมยุคใหม่</p>
-      <a class="btn btn-light btn-lg" href="{{ url_for('auth.register') }}">เริ่มต้นใช้งาน <i class="bi bi-arrow-right ms-2"></i></a>
-    </div>
-    <div class="hero-decoration"><div class="hero-icon"><i class="bi bi-people-fill"></i></div><span class="float-chip"><i class="bi bi-check-circle-fill"></i> ทำงานเป็นทีม</span><span class="float-chip chip-alt"><i class="bi bi-lightning-charge-fill"></i> ทำงานคล่องตัว</span></div>
-  </section>
-  <section class="row g-4 mt-4">
+<section class="welcome-hero" style="background-image:url('{{ url_for('static', filename='img/city_skyline.jpg') }}');background-size:cover;background-position:center;position:relative; min-height:85vh;">
+  <div class="hero-overlay" style="position:absolute; inset:0; background:linear-gradient(to bottom left, rgba(12,30,70,0.6), rgba(20,50,100,0.4), rgba(255,215,0,0.15));"></div>
+  <div class="hero-copy" style="position:relative; z-index:2; max-width:560px; color:#fff; padding:3rem;">
+    <span class="eyebrow" style="color:#c9c5ff; font-size:1rem;">SmartWork Hub</span>
+    <h1 style="font-size:clamp(2.2rem,5vw,3.5rem); font-weight:700; line-height:1.2;">
+      เชื่อมทุกการทำงาน<br/>
+      <span style="color:#FFD700;">ขับเคลื่อนทุกความสำเร็จ</span>
+    </h1>
+    <p style="font-size:1rem; color:#e0defa; margin-top:0.8rem;">
+      แพลตฟอร์มศูนย์กลางการทำงานอัจฉริยะ ที่ช่วยให้บุคลากรจัดการข้อมูลพนักงาน เวลาเข้า‑ออก การลา และงานต่าง ๆ ได้อย่างเป็นระบบในที่เดียว
+    </p>
+    <p style="font-size:0.95rem; color:#cfd6e8; margin-top:0.4rem;">
+      “ทำงานเป็นทีม เชื่อมโยงทุกฝ่าย ก้าวไปสู่ความสำเร็จร่วมกัน”
+    </p>
+    <a class="btn btn-light btn-lg mt-3 me-2" href="{{ url_for('auth.login') }}"><i class="bi bi-box-arrow-in-right me-1"></i>เข้าสู่ระบบ</a>
+    <a class="btn btn-primary btn-lg mt-3" href="{{ url_for('auth.register') }}"><i class="bi bi-person-plus me-1"></i>สมัครสมาชิก</a>
+  </div>
+
+
+</section>
+  <section class="row g-4 mt-5">
+  <div class="col-md-3 col-sm-6 text-center">
+    <div class="icon-box bg-primary text-white mb-3 mx-auto" style="background:linear-gradient(135deg, #0f172a, #1d4ed8);"><i class="bi bi-people-fill"></i></div>
+    <h4 class="text-primary">ระบบจัดการพนักงาน</h4>
+    <p class="text-muted">จัดเก็บและจัดการข้อมูลบุคลากรอย่างเป็นระบบ</p>
+  </div>
+  <div class="col-md-3 col-sm-6 text-center">
+    <div class="icon-box bg-success text-white mb-3 mx-auto" style="background:linear-gradient(135deg, #064e3b, #10b981);"><i class="bi bi-clock-history"></i></div>
+    <h4 class="text-success">ระบบเช็คเวลาเข้า‑ออก</h4>
+    <p class="text-muted">บันทึกเวลาและตรวจสอบประวัติการทำงาน</p>
+  </div>
+  <div class="col-md-3 col-sm-6 text-center">
+    <div class="icon-box bg-warning text-white mb-3 mx-auto" style="background:linear-gradient(135deg, #78350f, #f59e0b);"><i class="bi bi-calendar2-heart"></i></div>
+    <h4 class="text-warning">ระบบการลา</h4>
+    <p class="text-muted">ส่งคำขอลาและติดตามสถานะการอนุมัติ</p>
+  </div>
+  <div class="col-md-3 col-sm-6 text-center">
+    <div class="icon-box bg-info text-white mb-3 mx-auto" style="background:linear-gradient(135deg, #0e7490, #38bdf8);"><i class="bi bi-shield-lock-fill"></i></div>
+    <h4 class="text-info">พื้นที่ทำงานที่ปลอดภัย</h4>
+    <p class="text-muted">จัดการข้อมูลตามบทบาทและสิทธิ์ผู้ใช้งาน</p>
+  </div>
+</section>
     <div class="col-md-4"><div class="feature-card"><span class="feature-icon blue"><i class="bi bi-person-lines-fill"></i></span><h3>จัดการบุคลากร</h3><p>ข้อมูลพนักงาน ตำแหน่ง และแผนกในที่เดียว</p></div></div>
     <div class="col-md-4"><div class="feature-card"><span class="feature-icon violet"><i class="bi bi-clock-history"></i></span><h3>เวลาและการลา</h3><p>ลงเวลาเข้าออกและติดตามคำขอลาอย่างชัดเจน</p></div></div>
     <div class="col-md-4"><div class="feature-card"><span class="feature-icon cyan"><i class="bi bi-bar-chart-line"></i></span><h3>ข้อมูลเพื่อทีม</h3><p>ภาพรวมการทำงานและรายงานจากข้อมูลจริง</p></div></div>
   </section>
+
+
+
+<!-- 3 Steps Section -->
+<section class="row g-4 mt-5">
+  <div class="col-12 text-center">
+    <h2>เริ่มต้นใช้งานใน 3 ขั้นตอนง่าย ๆ</h2>
+  </div>
+  <div class="col-md-4 text-center">
+    <div class="icon-box bg-primary text-white mb-3"><i class="bi bi-box-arrow-in-right"></i></div>
+    <h4>เข้าสู่ระบบ</h4>
+    <p>ล็อกอินด้วยบัญชีผู้ใช้ของคุณ</p>
+  </div>
+  <div class="col-md-4 text-center">
+    <div class="icon-box bg-success text-white mb-3"><i class="bi bi-clipboard-data"></i></div>
+    <h4>จัดการงาน</h4>
+    <p>สร้าง งาน/โครงการ จัดการทีมได้ครบวงจร</p>
+  </div>
+  <div class="col-md-4 text-center">
+    <div class="icon-box bg-warning text-white mb-3"><i class="bi bi-graph-up"></i></div>
+    <h4>ติดตามผล</h4>
+    <p>รับรายงานเชิงลึกเพื่อพัฒนาทีมของคุณ</p>
+  </div>
+</section>
+
 {% else %}
+
   <div class="dashboard-welcome">
     <div>    <span class="eyebrow">ภาพรวมการบริหารบุคลากร</span><h1>สวัสดี, {{ current_user.full_name.split(' ')[0] }} <span class="wave">✦</span></h1><p>ภาพรวมองค์กร ณ วันที่ {{ today|thai_date }} เวลา {{ thai_clock }} (ประเทศไทย)</p></div>
     {% if current_user.is_hr_or_admin %}<a href="{{ url_for('employees.create') }}" class="btn btn-primary btn-lg"><i class="bi bi-plus-lg me-2"></i>เพิ่มพนักงาน</a>{% else %}<a href="{{ url_for('attendance.check_in_out') }}" class="btn btn-primary btn-lg"><i class="bi bi-clock me-2"></i>ลงเวลาทำงาน</a>{% endif %}

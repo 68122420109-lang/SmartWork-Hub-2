@@ -1,12 +1,241 @@
 {% extends 'base.html' %}
 {% block title %}คำขอลา | SmartWork Hub{% endblock %}
 {% block page_heading %}จัดการคำขอลา{% endblock %}
+
 {% block content %}
-<div class="dashboard-welcome"><div><span class="eyebrow">จัดการวันลา</span><h1>{{ 'คำขอลาพนักงาน' if is_hr else 'วันลาและคำขอของฉัน' }}</h1><p>{% if is_hr %}ตรวจสอบ อนุมัติ หรือปฏิเสธคำขอลาของทีม{% else %}ยื่นคำขอและติดตามสถานะวันลาของคุณ{% endif %}</p></div>{% if is_hr %}<span class="badge rounded-pill text-bg-warning px-3 py-2">{{ pending_count }} รายการรออนุมัติ</span>{% endif %}</div>
-<div class="row g-4">
-{% if not is_hr %}<div class="col-lg-4"><div class="panel-card"><div class="panel-heading"><div><span class="eyebrow">ส่งคำขอใหม่</span><h2>ยื่นใบลา</h2><p>ส่งให้ฝ่ายบุคคลพิจารณา</p></div></div><form method="post">{{ form.hidden_tag() }}{% for field in [form.leave_type, form.start_date, form.end_date, form.reason] %}<div class="mb-3"><label class="form-label">{{ field.label.text }}</label>{{ field(class="form-select" if field.type == 'SelectField' else "form-control", rows="3" if field.type == 'TextAreaField' else "2" if field.type == 'DateField' else "1") }}{% for error in field.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}</div>{% endfor %}<button class="btn btn-primary w-100">{{ form.submit.label.text }}</button></form></div></div>{% endif %}
-<div class="{{ 'col-lg-8' if not is_hr else 'col-12' }}"><div class="panel-card"><div class="panel-heading"><div><span class="eyebrow">ประวัติการลา</span><h2>รายการคำขอลา</h2><p>{{ leave_requests|length }} รายการล่าสุด</p></div></div>
-<form class="row g-2 align-items-end mb-3" method="get"><div class="col-sm-4 col-lg-2"><label class="form-label small">สถานะ</label><select name="status" class="form-select form-select-sm"><option value="">ทุกสถานะ</option><option value="Pending" {{ 'selected' if status_filter == 'Pending' }}>รออนุมัติ</option><option value="Approved" {{ 'selected' if status_filter == 'Approved' }}>อนุมัติแล้ว</option><option value="Rejected" {{ 'selected' if status_filter == 'Rejected' }}>ปฏิเสธ</option></select></div><div class="col-sm-4 col-lg-2"><label class="form-label small">ตั้งแต่</label><input type="date" name="date_from" value="{{ date_from }}" class="form-control form-control-sm"></div><div class="col-sm-4 col-lg-2"><label class="form-label small">ถึง</label><input type="date" name="date_to" value="{{ date_to }}" class="form-control form-control-sm"></div><div class="col-auto"><button class="btn btn-sm btn-outline-primary"><i class="bi bi-funnel me-1"></i>กรอง</button></div>{% if is_hr %}<div class="col-auto"><a class="btn btn-sm btn-outline-secondary" href="{{ url_for('leave.report_csv', date_from=date_from, date_to=date_to) }}"><i class="bi bi-download me-1"></i>ดาวน์โหลดรายงาน</a></div>{% endif %}</form>
-<div class="table-responsive"><table class="table align-middle"><thead><tr>{% if is_hr %}<th>พนักงาน</th>{% endif %}<th>ประเภท</th><th>ช่วงวันลา</th><th>จำนวนวัน</th><th>เหตุผล</th><th>สถานะ</th>{% if is_hr %}<th>ดำเนินการ</th>{% endif %}</tr></thead><tbody>{% for leave in leave_requests %}<tr>{% if is_hr %}<td>{{ leave.employee.full_name }}<small class="d-block text-muted">{{ leave.employee.employee_code }}</small></td>{% endif %}<td>{{ leave.leave_type_display }}</td><td>{{ leave.start_date|thai_date }} – {{ leave.end_date|thai_date }}</td><td>{{ leave.days_count }}</td><td class="reason-cell">{{ leave.reason }}</td><td><span class="badge rounded-pill {{ leave.status_badge_class }}">{{ leave.status_display }}</span></td>{% if is_hr %}<td>{% if leave.status == 'Pending' %}<form method="post" action="{{ url_for('leave.decision', leave_id=leave.id) }}" class="d-flex flex-wrap gap-1"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input name="action_notes" class="form-control form-control-sm decision-note" placeholder="หมายเหตุเพิ่มเติม"><button name="decision" value="Approved" class="btn btn-sm btn-success">อนุมัติ</button><button name="decision" value="Rejected" class="btn btn-sm btn-outline-danger">ปฏิเสธ</button></form>{% else %}<small class="text-muted">{{ leave.action_by.full_name if leave.action_by else '-' }}</small>{% endif %}</td>{% endif %}</tr>{% else %}<tr><td colspan="{{ 7 if is_hr else 5 }}" class="text-center text-muted py-5"><i class="bi bi-calendar2-x fs-3 d-block mb-2"></i>ยังไม่มีรายการคำขอลา</td></tr>{% endfor %}</tbody></table></div></div></div>
+<div class="dashboard-welcome d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <span class="eyebrow text-primary fw-semibold">ระบบยื่นและพิจารณาคำขอลา</span>
+    <h2 class="fw-bold mb-1">{{ 'จัดการคำขอลาพนักงาน' if is_hr else 'วันลาและคำขอของฉัน' }}</h2>
+    <p class="text-muted mb-0">{% if is_hr %}ตรวจสอบ อนุมัติ หรือปฏิเสธคำขอลาของพนักงานในองค์กร{% else %}ยื่นคำขอลาพร้อมแนบเอกสาร และติดตามผลการอนุมัติ{% endif %}</p>
+  </div>
+  {% if is_hr %}
+    <span class="badge bg-warning-subtle text-warning px-3 py-2 rounded-pill fs-6">
+      <i class="bi bi-hourglass-split me-1"></i>{{ pending_count }} รายการรออนุมัติ
+    </span>
+  {% endif %}
 </div>
+
+<div class="row g-4">
+  {% if not is_hr %}
+    <!-- Leave Request Form -->
+    <div class="col-lg-4">
+      <div class="card dashboard-card p-4 shadow-sm">
+        <div class="mb-3">
+          <span class="eyebrow text-primary small fw-semibold">แบบฟอร์มคำขอ</span>
+          <h4 class="fw-bold mb-1">ยื่นใบลา</h4>
+          <p class="text-muted small mb-0">ส่งคำขอให้ฝ่ายบุคคลพิจารณา</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('leave.index') }}" enctype="multipart/form-data">
+          {{ form.hidden_tag() }}
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">{{ form.leave_type.label.text }}</label>
+            {{ form.leave_type(class="form-select") }}
+            {% for error in form.leave_type.errors %}
+              <div class="text-danger small mt-1">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">{{ form.start_date.label.text }}</label>
+            {{ form.start_date(class="form-control") }}
+            {% for error in form.start_date.errors %}
+              <div class="text-danger small mt-1">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">{{ form.end_date.label.text }}</label>
+            {{ form.end_date(class="form-control") }}
+            {% for error in form.end_date.errors %}
+              <div class="text-danger small mt-1">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">{{ form.reason.label.text }}</label>
+            {{ form.reason(class="form-control", rows="3", placeholder="ระบุเหตุผลการลาอย่างชัดเจน...") }}
+            {% for error in form.reason.errors %}
+              <div class="text-danger small mt-1">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">{{ form.attachments.label.text }}</label>
+            {{ form.attachments(class="form-control", accept=".jpg,.jpeg,.png,.webp,.pdf", multiple=true) }}
+            <div class="form-text small">แนบเอกสารหรือรูปภาพหลายไฟล์ (รองรับ JPG, PNG, WEBP, PDF ขนาดไม่เกิน 5 MB ต่อไฟล์)</div>
+            <div id="attachment-dates" class="mt-2"></div>
+            {% for error in form.attachments.errors %}
+              <div class="text-danger small mt-1">{{ error }}</div>
+            {% endfor %}
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 py-2">
+            <i class="bi bi-send me-1"></i>{{ form.submit.label.text }}
+          </button>
+        </form>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Leave Requests List -->
+  <div class="{{ 'col-lg-8' if not is_hr else 'col-12' }}">
+    <div class="card dashboard-card p-4 shadow-sm">
+      <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <div>
+          <span class="eyebrow text-primary small fw-semibold">ประวัติและสถานะ</span>
+          <h4 class="fw-bold mb-0">รายการคำขอลา</h4>
+        </div>
+        <div class="text-muted small">แสดง {{ leave_requests|length }} รายการล่าสุด</div>
+      </div>
+
+      <!-- Filters & CSV Export -->
+      <form class="row g-2 align-items-end mb-3" method="GET" action="{{ url_for('leave.index') }}">
+        <div class="col-sm-4 col-md-3 col-lg-2">
+          <label class="form-label small text-muted">สถานะ</label>
+          <select name="status" class="form-select form-select-sm">
+            <option value="">ทุกสถานะ</option>
+            <option value="Pending" {{ 'selected' if status_filter == 'Pending' }}>รออนุมัติ</option>
+            <option value="Approved" {{ 'selected' if status_filter == 'Approved' }}>อนุมัติแล้ว</option>
+            <option value="Rejected" {{ 'selected' if status_filter == 'Rejected' }}>ปฏิเสธ</option>
+          </select>
+        </div>
+        <div class="col-sm-4 col-md-3 col-lg-2">
+          <label class="form-label small text-muted">ตั้งแต่วันที่</label>
+          <input type="date" name="date_from" value="{{ date_from }}" class="form-control form-control-sm">
+        </div>
+        <div class="col-sm-4 col-md-3 col-lg-2">
+          <label class="form-label small text-muted">ถึงวันที่</label>
+          <input type="date" name="date_to" value="{{ date_to }}" class="form-control form-control-sm">
+        </div>
+        <div class="col-auto">
+          <button type="submit" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-funnel me-1"></i>กรองข้อมูล
+          </button>
+        </div>
+        {% if is_hr %}
+          <div class="col-auto ms-auto">
+            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('leave.report_csv', date_from=date_from, date_to=date_to) }}">
+              <i class="bi bi-download me-1"></i>ดาวน์โหลด CSV
+            </a>
+          </div>
+        {% endif %}
+      </form>
+
+      <!-- Table of Leave Requests -->
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              {% if is_hr %}<th>พนักงาน</th>{% endif %}
+              <th>ประเภท</th>
+              <th>ช่วงวันลา</th>
+              <th>จำนวนวัน</th>
+              <th>เหตุผล</th>
+              <th>เอกสารแนบ</th>
+              <th>สถานะ</th>
+              {% if is_hr %}<th>พิจารณาคำขอ</th>{% endif %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for leave in leave_requests %}
+              <tr>
+                {% if is_hr %}
+                  <td>
+                    <div class="fw-semibold">{{ leave.employee.full_name }}</div>
+                    <small class="text-muted">{{ leave.employee.employee_code }}</small>
+                  </td>
+                {% endif %}
+                <td>
+                  <span class="badge bg-light text-dark border">{{ leave.leave_type_display }}</span>
+                </td>
+                <td class="small text-nowrap">
+                  {{ leave.start_date|thai_date }}<br>
+                  <span class="text-muted">ถึง {{ leave.end_date|thai_date }}</span>
+                </td>
+                <td><strong>{{ leave.days_count }}</strong> วัน</td>
+                <td class="reason-cell small" style="max-width: 200px;">
+                  {{ leave.reason }}
+                </td>
+                <td>
+                  {% if leave.attachments %}
+                    {% for att in leave.attachments %}
+                      <a href="{{ url_for('leave.download_attachment', attachment_id=att.id) }}" target="_blank" class="btn btn-sm btn-outline-info py-0 px-2 me-1" title="เปิดดูเอกสารแนบ">{{ att.attached_date|thai_date }} <i class="bi bi-paperclip"></i></a>
+                    {% endfor %}
+                  {% else %}
+                    <span class="text-muted small">-</span>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="badge rounded-pill {{ leave.status_badge_class }}">{{ leave.status_display }}</span>
+                </td>
+                {% if is_hr %}
+                  <td>
+                    {% if leave.status == 'Pending' %}
+                      <form method="POST" action="{{ url_for('leave.decision', leave_id=leave.id) }}" class="d-flex flex-wrap gap-1">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input name="action_notes" class="form-control form-control-sm decision-note" placeholder="หมายเหตุ" style="width: 110px;">
+                        <button type="submit" name="decision" value="Approved" class="btn btn-sm btn-success">อนุมัติ</button>
+                        <button type="submit" name="decision" value="Rejected" class="btn btn-sm btn-outline-danger">ปฏิเสธ</button>
+                      </form>
+                    {% else %}
+                      <small class="text-muted d-block">โดย {{ leave.action_by.full_name if leave.action_by else '-' }}</small>
+                      {% if leave.action_notes %}
+                        <small class="text-secondary italic">"{{ leave.action_notes }}"</small>
+                      {% endif %}
+                    {% endif %}
+                  </td>
+                {% endif %}
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="{{ 8 if is_hr else 6 }}" class="text-center text-muted py-5">
+                  <i class="bi bi-calendar2-x fs-1 opacity-50 d-block mb-2"></i>
+                  ยังไม่มีรายการคำขอลา
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  // Dynamically add date inputs for each selected attachment
+  document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.querySelector('input[name="attachments"]');
+    const datesContainer = document.getElementById('attachment-dates');
+    if (!fileInput) return;
+    fileInput.addEventListener('change', function() {
+      // Clear previous inputs
+      datesContainer.innerHTML = '';
+      const files = Array.from(fileInput.files);
+      files.forEach((file, idx) => {
+        const div = document.createElement('div');
+        div.className = 'mb-2';
+        const label = document.createElement('label');
+        label.textContent = `วันที่สำหรับไฟล์ ${file.name}`;
+        label.className = 'form-label fw-semibold';
+        const input = document.createElement('input');
+        input.type = 'date';
+        input.name = 'attachment_dates';
+        input.required = true;
+        input.className = 'form-control';
+        // Set default to start_date if available
+        const startDateInput = document.querySelector('input[name="start_date"]');
+        if (startDateInput && startDateInput.value) {
+          input.value = startDateInput.value;
+        }
+        div.appendChild(label);
+        div.appendChild(input);
+        datesContainer.appendChild(div);
+      });
+    });
+  });
+</script>
 {% endblock %}

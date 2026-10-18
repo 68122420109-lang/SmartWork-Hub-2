@@ -12,7 +12,7 @@ tasks_bp = Blueprint('tasks', __name__)
 
 def task_access_required(task_id: int):
     task = Task.query.get_or_404(task_id)
-    if current_user.role != 'admin' and task.user_id != current_user.id:
+    if not current_user.is_hr_or_admin and task.user_id != current_user.id:
         abort(403)
     return task
 

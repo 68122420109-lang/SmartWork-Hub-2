@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{% block title %}SmartWork Hub{% endblock %}</title>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -38,7 +39,11 @@
         </nav>
         <div class="sidebar-bottom">
           <div class="sidebar-user">
-            <span class="user-avatar">{{ current_user.full_name[:1] }}</span>
+            {% if current_user.avatar_url %}
+              <img src="{{ url_for('static', filename=current_user.avatar_url) }}" class="rounded-circle object-fit-cover me-2" style="width: 38px; height: 38px;" alt="Avatar">
+            {% else %}
+              <span class="user-avatar">{{ current_user.full_name[:1] if current_user.full_name else 'U' }}</span>
+            {% endif %}
             <span class="user-meta"><strong>{{ current_user.full_name }}</strong><small>{{ current_user.role_display }}</small></span>
             <a href="{{ url_for('auth.logout') }}" title="ออกจากระบบ" aria-label="ออกจากระบบ"><i class="bi bi-box-arrow-right"></i></a>
           </div>
@@ -48,14 +53,22 @@
     <div class="{{ 'app-shell' if current_user.is_authenticated else 'public-shell' }}">
       {% if not current_user.is_authenticated %}
         <nav class="navbar navbar-expand-lg navbar-light public-nav">
-          <div class="container">
-            <a class="navbar-brand fw-bold" href="{{ url_for('main.home') }}"><span class="brand-mark">S</span> SmartWork Hub</a>
-            <div class="ms-auto d-flex gap-2">
-              <a class="btn btn-outline-primary" href="{{ url_for('auth.login') }}">เข้าสู่ระบบ</a>
-              <a class="btn btn-primary" href="{{ url_for('auth.register') }}">สมัครสมาชิก</a>
-            </div>
-          </div>
-        </nav>
+  <div class="container">
+    <a class="navbar-brand fw-bold" href="{{ url_for('main.home') }}"><span class="brand-mark">S</span> SmartWork Hub</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#publicNavbar" aria-controls="publicNavbar" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="publicNavbar">
+      <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+        <li class="nav-item"><a class="nav-link active" href="{{ url_for('main.home') }}">หน้าแรก</a></li>
+        <li class="nav-item"><a class="nav-link" href="#about">เกี่ยวกับเรา</a></li>
+        <li class="nav-item"><a class="nav-link" href="#features">ฟีเจอร์</a></li>
+        <li class="nav-item"><a class="nav-link" href="#contact">ติดต่อเรา</a></li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
       {% else %}
         <header class="topbar">
           <button class="btn btn-light d-lg-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileNav" aria-label="เปิดเมนู"><i class="bi bi-list"></i></button>

@@ -1,0 +1,54 @@
+/* Modern Premium Style */
+:root {
+  --font-primary: 'Sarabun', sans-serif;
+  --color-bg: #f0f2f5;
+  --color-bg-dark: #1e1e2f;
+  --color-primary: hsl(210, 80%, 55%);
+  --color-primary-light: hsl(210, 80%, 65%);
+  --color-text: #212529;
+  --color-text-light: #f8f9fa;
+  --glass-bg: rgba(255,255,255,0.25);
+  --glass-border: rgba(255,255,255,0.18);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: var(--color-bg-dark);
+    --color-text: var(--color-text-light);
+    --glass-bg: rgba(30,30,47,0.35);
+    --glass-border: rgba(255,255,255,0.12);
+  }
+}
+
+body {
+  font-family: var(--font-primary);
+  background: var(--color-bg);
+  margin: 0;
+  color: var(--color-text);
+}
+
+.hero {
+  height: 100vh;
+  background: linear-gradient(135deg, hsl(210,80%,60%), hsl(210,80%,45%));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hero .hero-content {text-align:center; color: var(--color-text-light);} 
+.hero h1 {font-size:2.5rem; margin-bottom:0.5rem;}
+.hero .brand {color: var(--color-primary-light); font-weight:600;}
+.hero .tagline {font-size:1.2rem; margin-bottom:1.5rem; opacity:0.9;}
+.btn-primary {background: var(--color-primary); color:#fff; padding:0.8rem 1.6rem; border:none; border-radius:0.5rem; text-decoration:none; font-weight:600; transition:background 0.3s;}
+.btn-primary:hover {background: var(--color-primary-light);}
+
+.features {padding:4rem 1rem; text-align:center;}
+.features h2 {margin-bottom:2rem; font-size:2rem;}
+.cards {display:flex; flex-wrap:wrap; gap:1.5rem; justify-content:center;}
+.card {background: var(--glass-bg); backdrop-filter: blur(10px); border-radius:1rem; padding:1.5rem; width:300px; border:1px solid var(--glass-border); box-shadow:0 4px 12px rgba(0,0,0,0.1); transition:transform 0.3s;}
+.card:hover {transform:translateY(-5px);} 
+.card .icon {font-size:2rem; color: var(--color-primary); margin-bottom:0.5rem;}
+.card h3 {margin:0.5rem 0;}
+.card p {font-size:0.95rem; opacity:0.85;}
+
+.footer {background: var(--color-bg-dark); color: var(--color-text-light); text-align:center; padding:1rem;}
+@media (max-width:768px) {.cards {flex-direction:column; align-items:center;}}

@@ -1,9 +1,14 @@
 import csv
 import io
+import os
+import time
+import uuid
 from datetime import date, datetime, timezone
+from pathlib import Path
 
-from flask import Response, flash, redirect, render_template, request, url_for
+from flask import Response, abort, current_app, flash, redirect, render_template, request, send_from_directory, url_for
 from flask_login import current_user, login_required
+from PIL import Image
 
 from app.extensions import db
 from app.forms import LeaveRequestForm
@@ -26,6 +31,41 @@ def index():
         if not employee:
             flash('กรุณาเชื่อมโยงบัญชีพนักงานก่อนยื่นคำขอลา', 'danger')
             return redirect(url_for('leave.index'))
+
+        # Process multiple attachments
+        uploaded_files = []
+        if form.attachments.data:
+            for file_storage in form.attachments.data:
+                if not file_storage or not getattr(file_storage, 'filename', None):
+                    continue
+                filename_orig = file_storage.filename.lower()
+                ext = filename_orig.rsplit('.', 1)[-1] if '.' in filename_orig else ''
+                if ext not in {'jpg', 'jpeg', 'png', 'webp', 'pdf'}:
+                    flash('ชนิดไฟล์แนบไม่ได้รับอนุญาต (รองรับเฉพาะ JPG, PNG, WEBP, PDF)', 'danger')
+                    return redirect(url_for('leave.index'))
+
+                # Validate real file content
+                try:
+                    raw_head = file_storage.stream.read(1024)
+                    file_storage.stream.seek(0)
+                    if ext == 'pdf':
+                        if not raw_head.startswith(b'%PDF'):
+                            flash('ไฟล์ PDF ไม่ถูกต้องหรือถูกแก้ไขนามสกุล', 'danger')
+                            return redirect(url_for('leave.index'))
+                    else:
+                        pil_img = Image.open(file_storage.stream)
+                        pil_img.verify()
+                        file_storage.stream.seek(0)
+                except Exception:
+                    flash('ไฟล์แนบเสียหายหรือไม่ถูกต้องตามมาตรฐานความปลอดภัย', 'danger')
+                    return redirect(url_for('leave.index'))
+
+                upload_dir = Path(current_app.config['BASE_DIR']) / 'app' / 'static' / 'uploads' / 'leave_attachments'
+                upload_dir.mkdir(parents=True, exist_ok=True)
+                safe_name = f"leave_emp{employee.id}_{int(time.time())}_{uuid.uuid4().hex[:8]}.{ext}"
+                file_storage.save(upload_dir / safe_name)
+                uploaded_files.append(f"uploads/leave_attachments/{safe_name}")
+
         leave = LeaveRequest(
             employee_id=employee.id,
             leave_type=form.leave_type.data,
@@ -36,6 +76,22 @@ def index():
         )
         db.session.add(leave)
         db.session.commit()
+
+        # Save attachment records with associated dates
+        attachment_dates = request.form.getlist('attachment_dates')
+        for idx, file_path in enumerate(uploaded_files):
+            try:
+                attached_date = date.fromisoformat(attachment_dates[idx]) if idx < len(attachment_dates) else leave.start_date
+            except Exception:
+                attached_date = leave.start_date
+            attachment = LeaveAttachment(
+                leave_request_id=leave.id,
+                file_path=file_path,
+                attached_date=attached_date,
+            )
+            db.session.add(attachment)
+        db.session.commit()
+
         flash('ส่งคำขอลาเรียบร้อยแล้ว', 'success')
         return redirect(url_for('leave.index'))
 
@@ -139,3 +195,21 @@ def report_csv():
         mimetype='text/csv; charset=utf-8',
         headers={'Content-Disposition': f'attachment; filename=leave_report_{date.today():%Y%m%d}.csv'},
     )
+
+
+@leave_bp.route('/attachment/<int:attachment_id>')
+@login_required
+def download_attachment(attachment_id: int):
+    attachment = LeaveAttachment.query.get_or_404(attachment_id)
+    employee = get_current_employee()
+    # Permission check: HR/Admin or owner of the leave request
+    if not current_user.is_hr_or_admin:
+        if not employee or attachment.leave_request.employee_id != employee.id:
+            abort(403)
+    upload_dir = Path(current_app.config['BASE_DIR']) / 'app' / 'static' / 'uploads' / 'leave_attachments'
+    filename = os.path.basename(attachment.file_path)
+    target_file = upload_dir / filename
+    if not target_file.exists():
+        abort(404)
+    return send_from_directory(upload_dir, filename)
+

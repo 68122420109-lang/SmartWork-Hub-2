@@ -25,6 +25,8 @@ def create_app(test_config: dict | None = None) -> Flask:
     Config.init_upload_folder(app)
     if test_config:
         app.config.update(test_config)
+        if str(app.config.get('SQLALCHEMY_DATABASE_URI', '')).startswith('sqlite') and 'SQLALCHEMY_ENGINE_OPTIONS' not in test_config:
+            app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {}
 
     app.add_template_filter(thai_date_format, 'thai_date')
     app.add_template_filter(lambda value: thai_date_format(value, include_time=True), 'thai_datetime')

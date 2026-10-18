@@ -45,6 +45,12 @@ class User(db.Model, UserMixin):
         }
         return roles_map.get(self.role, self.role)
 
+    @property
+    def avatar_url(self) -> str | None:
+        if hasattr(self, 'employee') and self.employee and self.employee.avatar_url:
+            return self.employee.avatar_url
+        return None
+
     def set_password(self, password: str):
         self.password_hash = generate_password_hash(password)
 
@@ -214,7 +220,7 @@ class LeaveRequest(db.Model):
     end_date = db.Column(db.Date, nullable=False, index=True)
     days_count = db.Column(db.Float, nullable=False, default=1.0)
     reason = db.Column(db.Text, nullable=False)
-    attachment_url = db.Column(db.String(255), nullable=True)
+    # Removed single attachment_url; use LeaveAttachment relationship
     status = db.Column(db.String(30), nullable=False, default='Pending', index=True)  # 'Pending', 'Approved', 'Rejected'
     action_by_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
     action_at = db.Column(db.DateTime, nullable=True)
@@ -224,6 +230,7 @@ class LeaveRequest(db.Model):
 
     employee = db.relationship('Employee', back_populates='leave_requests')
     action_by = db.relationship('User', foreign_keys=[action_by_id])
+    attachments = db.relationship('LeaveAttachment', back_populates='leave_request', cascade='all, delete-orphan')
 
     @property
     def leave_type_display(self) -> str:
@@ -365,3 +372,39 @@ class Task(db.Model):
 
     def __repr__(self):
         return f'<Task {self.title}>'
+
+
+class FaceEnrollment(db.Model):
+    __tablename__ = 'face_enrollments'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False, unique=True, index=True)
+    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id', ondelete='CASCADE'), nullable=False, unique=True, index=True)
+    consent_given = db.Column(db.Boolean, default=False, nullable=False)
+    consent_at = db.Column(db.DateTime, nullable=True)
+    reference_photo = db.Column(db.String(255), nullable=True)
+    face_features = db.Column(db.Text, nullable=True)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    user = db.relationship('User', backref=db.backref('face_enrollment', uselist=False, cascade='all, delete-orphan'))
+    employee = db.relationship('Employee', backref=db.backref('face_enrollment', uselist=False, cascade='all, delete-orphan'))
+
+    def __repr__(self):
+        return f'<FaceEnrollment User:{self.user_id} Emp:{self.employee_id} Active:{self.is_active}>'
+
+
+class LeaveAttachment(db.Model):
+    __tablename__ = 'leave_attachments'
+
+    id = db.Column(db.Integer, primary_key=True)
+    leave_request_id = db.Column(db.Integer, db.ForeignKey('leave_requests.id', ondelete='CASCADE'), nullable=False, index=True)
+    file_path = db.Column(db.String(255), nullable=False)
+    attached_date = db.Column(db.Date, nullable=False)  # Date the evidence relates to
+    uploaded_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    leave_request = db.relationship('LeaveRequest', back_populates='attachments')
+
+    def __repr__(self):
+        return f'<LeaveAttachment {self.id} LR:{self.leave_request_id} Date:{self.attached_date}>'

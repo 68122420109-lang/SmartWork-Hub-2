@@ -157,8 +157,7 @@ def detail(emp_id: int):
     # Permission check: Normal employees can only view their own profile unless HR/Admin
     if not current_user.is_hr_or_admin:
         if not employee.user_id or employee.user_id != current_user.id:
-            flash('คุณไม่มีสิทธิ์ดูข้อมูลพนักงานท่านอื่น', 'warning')
-            return redirect(url_for('employees.index'))
+            abort(403)
 
     # Recent attendance (last 30 records)
     recent_attendances = Attendance.query.filter_by(employee_id=employee.id).order_by(Attendance.date.desc()).limit(15).all()

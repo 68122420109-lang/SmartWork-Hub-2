@@ -1,33 +1,385 @@
 {% extends 'base.html' %}
 {% block title %}ลงเวลาทำงาน | SmartWork Hub{% endblock %}
 {% block page_heading %}ลงเวลาเข้า-ออกงาน{% endblock %}
+
 {% block content %}
-<div class="dashboard-welcome"><div><span class="eyebrow">บันทึกเวลาเข้า-ออกงาน</span><h1>ลงเวลาทำงาน</h1><p>บันทึกเวลาเข้าและออกงานประจำวัน</p></div><a href="{{ url_for('attendance.my_history') }}" class="btn btn-outline-primary"><i class="bi bi-clock-history me-2"></i>ประวัติของฉัน</a></div>
+<div class="dashboard-welcome d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+  <div>
+    <span class="eyebrow text-primary fw-semibold">ระบบบันทึกเวลาทำงานด้วยชีวมิติใบหน้า</span>
+    <h2 class="fw-bold mb-1">ลงเวลาทำงาน (Attendance)</h2>
+    <p class="text-muted mb-0">ระบบตรวจสอบใบหน้าจริงและบันทึกเวลาในเขตเวลาประเทศไทย (Asia/Bangkok)</p>
+  </div>
+  <div class="d-flex gap-2">
+    <a href="{{ url_for('attendance.face_enroll') }}" class="btn btn-outline-secondary">
+      <i class="bi bi-person-bounding-box me-1"></i>จัดการข้อมูลใบหน้า
+    </a>
+    <a href="{{ url_for('attendance.my_history') }}" class="btn btn-outline-primary">
+      <i class="bi bi-clock-history me-1"></i>ประวัติของฉัน
+    </a>
+  </div>
+</div>
+
 {% if employee %}
 <div class="row g-4">
-  <div class="col-lg-7"><div class="panel-card attendance-punch">
-    <div class="punch-date"><i class="bi bi-calendar-event me-2"></i>{{ today|thai_date }}</div>
-    <div class="punch-clock" id="liveClock">--:--:--</div>
-    <p class="text-muted">เวลาทำงานมาตรฐาน {{ work_start }} – {{ work_end }} · ผ่อนผัน {{ grace_minutes }} นาที</p>
-    <div class="punch-state">{% if today_attendance and today_attendance.check_in %}<span class="badge rounded-pill {{ today_attendance.status_badge_class }}">{{ today_attendance.status_display }}{% if today_attendance.late_minutes %} {{ today_attendance.late_minutes }} นาที{% endif %}</span>{% else %}<span class="badge rounded-pill text-bg-light">ยังไม่ได้ลงเวลาเข้า</span>{% endif %}</div>
-    <div class="d-flex justify-content-center gap-3 mt-4">
-      <form method="post" action="{{ url_for('attendance.check_in') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-primary btn-lg" {% if today_attendance and today_attendance.check_in %}disabled{% endif %}><i class="bi bi-box-arrow-in-right me-2"></i>เข้างาน</button></form>
-      <form method="post" action="{{ url_for('attendance.check_out') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-outline-primary btn-lg" {% if not today_attendance or not today_attendance.check_in or today_attendance.check_out %}disabled{% endif %}><i class="bi bi-box-arrow-right me-2"></i>ออกงาน</button></form>
+  <!-- Main Check-In / Check-Out Panel -->
+  <div class="col-lg-7">
+    <div class="card dashboard-card p-4 text-center shadow-sm h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <span class="badge bg-light text-dark border px-3 py-2 rounded-pill">
+          <i class="bi bi-calendar-event text-primary me-1"></i>{{ today|thai_date }}
+        </span>
+        <span class="small text-muted">
+          กะทำงาน: {{ work_start }} - {{ work_end }} น. (ผ่อนผัน {{ grace_minutes }} นาที)
+        </span>
+      </div>
+
+      <!-- Live Digital Clock -->
+      <div class="py-2">
+        <div class="display-3 fw-bold text-primary font-monospace tracking-tight" id="liveClock">--:--:--</div>
+        <div class="small text-muted">เวลามาตรฐานประเทศไทย (Asia/Bangkok)</div>
+      </div>
+
+      <!-- Current Day Status -->
+      <div class="my-3">
+        {% if today_attendance and today_attendance.check_in %}
+          <div class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-pill bg-success-subtle text-success border border-success-subtle">
+            <i class="bi bi-check-circle-fill fs-5"></i>
+            <span class="fw-bold">เข้างานแล้ว ({{ today_attendance.check_in|thai_time }})</span>
+            <span class="badge {{ today_attendance.status_badge_class }}">{{ today_attendance.status_display }}</span>
+          </div>
+        {% else %}
+          <div class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-pill bg-light text-secondary border">
+            <i class="bi bi-hourglass-split"></i>
+            <span>วันนี้ยังไม่ได้ลงเวลาเข้างาน</span>
+          </div>
+        {% endif %}
+      </div>
+
+      <hr class="my-3">
+
+      <!-- Check-In Action Section -->
+      {% if not today_attendance or not today_attendance.check_in %}
+        {% if not face_enrollment or not face_enrollment.is_active %}
+          <!-- Unenrolled Warning -->
+          <div class="alert alert-warning text-start p-3 mb-3">
+            <div class="d-flex">
+              <i class="bi bi-shield-exclamation fs-3 text-warning me-3"></i>
+              <div>
+                <h6 class="fw-bold mb-1">จำเป็นต้องลงทะเบียนใบหน้าก่อนลงเวลา</h6>
+                <p class="small mb-2">เพื่อความโปร่งใสและถูกต้อง ระบบบังคับใช้การยืนยันตัวตนด้วยใบหน้าจริงก่อนบันทึกเวลาเข้างาน</p>
+                <a href="{{ url_for('attendance.face_enroll') }}" class="btn btn-warning btn-sm fw-semibold">
+                  <i class="bi bi-camera me-1"></i>ลงทะเบียนใบหน้าตอนนี้ (Face Enrollment)
+                </a>
+              </div>
+            </div>
+          </div>
+        {% else %}
+          <!-- Face Scan Attendance Box -->
+          <div class="card bg-light border-0 p-3 mb-3 text-start">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6 class="fw-bold mb-0 text-dark">
+                <i class="bi bi-camera-fill text-primary me-1"></i>สแกนใบหน้าเข้างาน (Face Verification)
+              </h6>
+              <span class="badge bg-success-subtle text-success small">พร้อมสแกน</span>
+            </div>
+
+            <!-- Camera Viewport Container -->
+            <div id="checkInCamContainer" class="position-relative bg-dark rounded-3 overflow-hidden text-center mb-2 d-none" style="max-height: 320px;">
+              <video id="faceCheckInVideo" playsinline autoplay muted class="w-100 h-100 object-fit-cover" style="max-height: 300px;"></video>
+              <canvas id="faceCheckInCanvas" class="d-none"></canvas>
+
+              <!-- Oval Guide -->
+              <div class="position-absolute top-50 start-50 translate-middle pointer-events-none" style="width: 170px; height: 220px; border: 2px dashed rgba(255,255,255,0.85); border-radius: 50%; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);">
+              </div>
+
+              <!-- Liveness Challenge Prompt Badge -->
+              <div id="challengeBadge" class="position-absolute top-0 start-50 translate-middle-x mt-2 badge bg-primary text-white py-2 px-3 shadow-sm d-none">
+                <i class="bi bi-info-circle me-1"></i><span id="challengeText">กำลังเตรียมการทดสอบ...</span>
+              </div>
+            </div>
+
+            <!-- Feedback Alert -->
+            <div id="scanAlertBox" class="alert d-none py-2 px-3 small mb-2" role="alert"></div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex flex-wrap gap-2 justify-content-center mt-2">
+              <button type="button" id="openScanBtn" class="btn btn-primary px-4">
+                <i class="bi bi-camera-video me-1"></i>เปิดกล้องสแกนหน้า
+              </button>
+              <button type="button" id="verifyPunchBtn" class="btn btn-success px-4 d-none">
+                <i class="bi bi-shield-check me-1"></i>สแกนใบหน้าและบันทึกเวลา
+              </button>
+              <button type="button" id="closeScanBtn" class="btn btn-outline-secondary btn-sm d-none">
+                <i class="bi bi-x-circle me-1"></i>ปิดกล้อง
+              </button>
+            </div>
+          </div>
+        {% endif %}
+      {% else %}
+        <!-- Already Checked In - Show Checkout Form -->
+        <div class="card bg-light border-0 p-4 mb-3">
+          <div class="mb-3">
+            <h5 class="fw-bold mb-1">ลงเวลาออกงาน (Check Out)</h5>
+            <p class="text-muted small mb-0">คุณได้ลงเวลาเข้างานเรียบร้อยแล้ว กดปุ่มด้านล่างเพื่อบันทึกเวลาเลิกงาน</p>
+          </div>
+          <form method="POST" action="{{ url_for('attendance.check_out') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-danger btn-lg px-5 shadow-sm" {% if today_attendance.check_out %}disabled{% endif %}>
+              <i class="bi bi-box-arrow-right me-2"></i>{% if today_attendance.check_out %}ออกงานเรียบร้อยแล้ว{% else %}บันทึกเวลาออกงาน{% endif %}
+            </button>
+          </form>
+        </div>
+      {% endif %}
+
+      <!-- Today Attendance Times Summary -->
+      {% if today_attendance %}
+        <div class="row g-2 text-center pt-2">
+          <div class="col-4">
+            <div class="p-2 border rounded bg-white">
+              <small class="text-muted d-block">เวลาเข้างาน</small>
+              <strong class="text-primary">{{ today_attendance.check_in|thai_time if today_attendance.check_in else '-' }}</strong>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="p-2 border rounded bg-white">
+              <small class="text-muted d-block">เวลาออกงาน</small>
+              <strong class="text-primary">{{ today_attendance.check_out|thai_time if today_attendance.check_out else '-' }}</strong>
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="p-2 border rounded bg-white">
+              <small class="text-muted d-block">ชั่วโมงทำงาน</small>
+              <strong class="text-success">{{ today_attendance.work_hours }} ชม.</strong>
+            </div>
+          </div>
+        </div>
+        {% if today_attendance.notes %}
+          <div class="mt-2 small text-muted text-start">
+            <i class="bi bi-info-circle me-1"></i>บันทึก: {{ today_attendance.notes }}
+          </div>
+        {% endif %}
+      {% endif %}
     </div>
-    {% if today_attendance %}<div class="punch-times"><div><small>เวลาเข้างาน</small><strong>{{ today_attendance.check_in|thai_time if today_attendance.check_in else '-' }}</strong></div><div><small>เวลาออกงาน</small><strong>{{ today_attendance.check_out|thai_time if today_attendance.check_out else '-' }}</strong></div><div><small>ชั่วโมงทำงาน</small><strong>{{ today_attendance.work_hours }} ชม.</strong></div></div>{% endif %}
-  </div></div>
-  <div class="col-lg-5"><div class="panel-card h-100"><div class="panel-heading"><div><span class="eyebrow">รายการล่าสุด</span><h2>ประวัติลงเวลาล่าสุด</h2></div></div>{% for record in recent_records %}<div class="activity-row"><span class="activity-mark"><i class="bi bi-clock"></i></span><div><strong>{{ record.date|thai_date }} · {{ record.status_display }}</strong><p>เข้า {{ record.check_in|thai_time if record.check_in else '-' }} · ออก {{ record.check_out|thai_time if record.check_out else '-' }}</p></div><span class="badge rounded-pill {{ record.status_badge_class }}">{{ record.status_display }}</span></div>{% else %}<div class="empty-inline">ยังไม่มีประวัติลงเวลา</div>{% endfor %}</div></div>
+  </div>
+
+  <!-- Recent Records Panel -->
+  <div class="col-lg-5">
+    <div class="card dashboard-card p-4 shadow-sm h-100">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold mb-0"><i class="bi bi-clock-history text-primary me-2"></i>ประวัติลงเวลาล่าสุด</h5>
+        <a href="{{ url_for('attendance.my_history') }}" class="btn btn-sm btn-outline-secondary">ดูทั้งหมด</a>
+      </div>
+
+      {% if recent_records %}
+        <div class="list-group list-group-flush">
+          {% for record in recent_records %}
+            <div class="list-group-item px-0 py-3 border-bottom d-flex justify-content-between align-items-center">
+              <div>
+                <div class="fw-semibold">{{ record.date|thai_date }}</div>
+                <div class="small text-muted">
+                  เข้า: {{ record.check_in|thai_time if record.check_in else '-' }} ·
+                  ออก: {{ record.check_out|thai_time if record.check_out else '-' }}
+                  {% if record.work_hours %}· รวม {{ record.work_hours }} ชม.{% endif %}
+                </div>
+              </div>
+              <div>
+                <span class="badge {{ record.status_badge_class }}">{{ record.status_display }}</span>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="text-center py-5 text-muted">
+          <i class="bi bi-calendar-x fs-1 opacity-50"></i>
+          <p class="mt-2 mb-0">ยังไม่มีประวัติการลงเวลา</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
 </div>
-{% else %}<div class="panel-card"><div class="empty-inline"><i class="bi bi-person-exclamation"></i>บัญชีของคุณยังไม่เชื่อมโยงกับข้อมูลพนักงาน กรุณาติดต่อฝ่ายบุคคลหรือผู้ดูแลระบบ</div></div>{% endif %}
+{% else %}
+  <div class="card dashboard-card p-5 text-center">
+    <i class="bi bi-person-exclamation fs-1 text-warning mb-3"></i>
+    <h4>บัญชีของคุณยังไม่ได้เชื่อมโยงกับข้อมูลพนักงาน</h4>
+    <p class="text-muted mb-0">กรุณาติดต่อฝ่ายบุคคล (HR) หรือผู้ดูแลระบบ เพื่อทำการเชื่อมโยงบัญชีและกำหนดเวลาทำงาน</p>
+  </div>
+{% endif %}
+
 <script>
-  (function () {
-    const clock = document.getElementById('liveClock');
-    if (!clock) return;
+(function () {
+  // Live Bangkok Clock
+  const clock = document.getElementById('liveClock');
+  if (clock) {
     const updateClock = function () {
-      clock.textContent = new Intl.DateTimeFormat('th-TH', { timeZone: 'Asia/Bangkok', hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(new Date());
+      clock.textContent = new Intl.DateTimeFormat('th-TH', {
+        timeZone: 'Asia/Bangkok',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      }).format(new Date());
     };
     updateClock();
     window.setInterval(updateClock, 1000);
-  })();
+  }
+
+  // Face Attendance Client Logic
+  const openScanBtn = document.getElementById('openScanBtn');
+  const verifyPunchBtn = document.getElementById('verifyPunchBtn');
+  const closeScanBtn = document.getElementById('closeScanBtn');
+  const camContainer = document.getElementById('checkInCamContainer');
+  const video = document.getElementById('faceCheckInVideo');
+  const canvas = document.getElementById('faceCheckInCanvas');
+  const scanAlertBox = document.getElementById('scanAlertBox');
+  const challengeBadge = document.getElementById('challengeBadge');
+  const challengeText = document.getElementById('challengeText');
+
+  let activeStream = null;
+  let activeChallengeToken = null;
+
+  function showScanAlert(msg, type = 'danger') {
+    if (!scanAlertBox) return;
+    scanAlertBox.className = `alert alert-${type} py-2 px-3 small`;
+    scanAlertBox.textContent = msg;
+    scanAlertBox.classList.remove('d-none');
+  }
+
+  function hideScanAlert() {
+    if (scanAlertBox) scanAlertBox.classList.add('d-none');
+  }
+
+  async function fetchChallenge() {
+    try {
+      const res = await fetch("{{ url_for('attendance.get_challenge') }}");
+      const data = await res.json();
+      activeChallengeToken = data.challenge_token;
+      if (challengeBadge && challengeText) {
+        challengeText.textContent = data.instruction || 'มองตรงที่กล้อง';
+        challengeBadge.classList.remove('d-none');
+      }
+    } catch (e) {
+      console.warn('Challenge fetch failed:', e);
+    }
+  }
+
+  if (openScanBtn) {
+    openScanBtn.addEventListener('click', async function () {
+      hideScanAlert();
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showScanAlert('เบราว์เซอร์ไม่รองรับการเปิดกล้อง หรือไม่ได้เชื่อมต่อผ่าน HTTPS / localhost');
+        return;
+      }
+
+      openScanBtn.disabled = true;
+      openScanBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>กำลังเปิดกล้อง...';
+
+      try {
+        activeStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+          audio: false
+        });
+        video.srcObject = activeStream;
+        await video.play();
+
+        camContainer.classList.remove('d-none');
+        verifyPunchBtn.classList.remove('d-none');
+        closeScanBtn.classList.remove('d-none');
+        openScanBtn.classList.add('d-none');
+
+        // Fetch cryptographic challenge
+        await fetchChallenge();
+      } catch (err) {
+        openScanBtn.disabled = false;
+        openScanBtn.innerHTML = '<i class="bi bi-camera-video me-1"></i>เปิดกล้องสแกนหน้า';
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          showScanAlert('คุณปฏิเสธการเข้าถึงกล้อง กรุณาอนุญาตสิทธิ์การใช้งานกล้องในเบราว์เซอร์');
+        } else if (err.name === 'NotFoundError') {
+          showScanAlert('ไม่พบอุปกรณ์กล้องบนเครื่องของคุณ');
+        } else {
+          showScanAlert('ไม่สามารถเปิดกล้องได้: ' + err.message);
+        }
+      }
+    });
+  }
+
+  function stopCamera() {
+    if (activeStream) {
+      activeStream.getTracks().forEach(t => t.stop());
+      activeStream = null;
+    }
+    if (camContainer) camContainer.classList.add('d-none');
+    if (verifyPunchBtn) verifyPunchBtn.classList.add('d-none');
+    if (closeScanBtn) closeScanBtn.classList.add('d-none');
+    if (openScanBtn) {
+      openScanBtn.classList.remove('d-none');
+      openScanBtn.disabled = false;
+      openScanBtn.innerHTML = '<i class="bi bi-camera-video me-1"></i>เปิดกล้องสแกนหน้า';
+    }
+    if (challengeBadge) challengeBadge.classList.add('d-none');
+  }
+
+  if (closeScanBtn) {
+    closeScanBtn.addEventListener('click', stopCamera);
+  }
+
+  if (verifyPunchBtn) {
+    verifyPunchBtn.addEventListener('click', async function () {
+      if (!video.videoWidth) {
+        showScanAlert('กล้องยังไม่พร้อม กรุณารอสักครู่');
+        return;
+      }
+
+      if (!activeChallengeToken) {
+        await fetchChallenge();
+      }
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageData = canvas.toDataURL('image/jpeg', 0.9);
+
+      verifyPunchBtn.disabled = true;
+      verifyPunchBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>กำลังยืนยันใบหน้ากับระบบ...';
+      hideScanAlert();
+
+      try {
+        const csrfToken = "{{ csrf_token() }}";
+        const res = await fetch("{{ url_for('attendance.verify_check_in') }}", {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+          },
+          body: JSON.stringify({
+            image_data: imageData,
+            challenge_token: activeChallengeToken
+          })
+        });
+
+        const result = await res.json();
+        if (result.success) {
+          showScanAlert(result.message, 'success');
+          stopCamera();
+          setTimeout(() => {
+            window.location.reload();
+          }, 1200);
+        } else {
+          showScanAlert(result.error || 'การตรวจสอบใบหน้าไม่ผ่าน');
+          verifyPunchBtn.disabled = false;
+          verifyPunchBtn.innerHTML = '<i class="bi bi-shield-check me-1"></i>สแกนใบหน้าและบันทึกเวลา';
+          if (result.need_refresh_challenge) {
+            await fetchChallenge();
+          }
+        }
+      } catch (err) {
+        showScanAlert('เกิดข้อผิดพลาดในการส่งข้อมูล: ' + err.message);
+        verifyPunchBtn.disabled = false;
+        verifyPunchBtn.innerHTML = '<i class="bi bi-shield-check me-1"></i>สแกนใบหน้าและบันทึกเวลา';
+      }
+    });
+  }
+
+  window.addEventListener('beforeunload', stopCamera);
+})();
 </script>
 {% endblock %}

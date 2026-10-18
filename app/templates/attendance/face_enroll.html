@@ -1,0 +1,291 @@
+{% extends 'base.html' %}
+{% block title %}ลงทะเบียนใบหน้า | SmartWork Hub{% endblock %}
+{% block page_heading %}ระบบลงทะเบียนใบหน้า (Face Enrollment){% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8 col-xl-7">
+    <div class="card dashboard-card shadow-sm border-0">
+      <div class="card-body p-4">
+        <!-- Header & Instructions -->
+        <div class="d-flex align-items-center mb-3">
+          <div class="p-3 rounded-circle bg-primary-subtle text-primary me-3">
+            <i class="bi bi-person-bounding-box fs-3"></i>
+          </div>
+          <div>
+            <h4 class="mb-1 fw-bold">ลงทะเบียนใบหน้าสำหรับลงเวลาทำงาน</h4>
+            <p class="text-muted small mb-0">ผูกข้อมูลชีวมิติกับบัญชี: <strong>{{ current_user.full_name }}</strong> ({{ employee.employee_code }})</p>
+          </div>
+        </div>
+
+        <div class="alert alert-info py-2 px-3 small d-flex align-items-center mb-3">
+          <i class="bi bi-info-circle-fill fs-5 me-2 text-info"></i>
+          <div>
+            <strong>คำแนะนำในการสแกน:</strong> กรุณาอยู่ในบริเวณที่มีแสงสว่างเพียงพอ ถอดแว่นตาดำหรือหน้ากาก และมองตรงที่กล้องให้อยู่ในกรอบวงรี
+          </div>
+        </div>
+
+        <!-- Camera Container -->
+        <div class="position-relative bg-dark rounded-4 overflow-hidden mb-3 text-center" style="min-height: 340px; max-height: 440px;">
+          <video id="webcam" playsinline autoplay muted class="w-100 h-100 object-fit-cover" style="display: none; max-height: 420px;"></video>
+          <canvas id="snapshotCanvas" class="d-none"></canvas>
+          <img id="capturedPreview" class="w-100 h-100 object-fit-cover d-none" style="max-height: 420px;" alt="Captured preview">
+
+          <!-- Face Oval Guide Overlay -->
+          <div id="faceGuide" class="position-absolute top-50 start-50 translate-middle pointer-events-none d-none" style="width: 220px; height: 280px; border: 3px dashed rgba(255, 255, 255, 0.8); border-radius: 50%; box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);">
+            <div class="position-absolute top-0 start-50 translate-middle-x mt-2 badge bg-dark bg-opacity-75 text-white small px-2 py-1">
+              จัดใบหน้าให้อยู่ในกรอบ
+            </div>
+          </div>
+
+          <!-- Placeholder when camera is off -->
+          <div id="cameraPlaceholder" class="d-flex flex-column align-items-center justify-content-center p-5 text-white" style="height: 340px;">
+            <i class="bi bi-camera-video-off fs-1 text-secondary mb-3"></i>
+            <h5>กล้องยังไม่ได้เปิดใช้งาน</h5>
+            <p class="text-white-50 small mb-3">กดปุ่ม "เปิดกล้อง" เพื่อเริ่มต้นการลงทะเบียนใบหน้า</p>
+            <button type="button" id="startCamBtn" class="btn btn-primary px-4">
+              <i class="bi bi-camera-video me-1"></i>เปิดกล้อง
+            </button>
+          </div>
+
+          <!-- Camera Loading Spinner -->
+          <div id="cameraLoading" class="position-absolute top-50 start-50 translate-middle text-white d-none">
+            <div class="spinner-border text-primary" role="status"></div>
+            <div class="mt-2 small">กำลังเปิดกล้อง...</div>
+          </div>
+        </div>
+
+        <!-- Camera Controls & Status -->
+        <div id="cameraControls" class="d-flex justify-content-between align-items-center mb-3 d-none">
+          <div>
+            <span id="cameraStatusBadge" class="badge bg-success-subtle text-success py-2 px-3 rounded-pill">
+              <i class="bi bi-record-circle me-1"></i>กล้องพร้อมใช้งาน
+            </span>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="button" id="switchCamBtn" class="btn btn-sm btn-outline-secondary" title="สลับกล้อง">
+              <i class="bi bi-arrow-repeat me-1"></i>สลับกล้อง
+            </button>
+            <button type="button" id="captureBtn" class="btn btn-sm btn-warning text-dark fw-semibold">
+              <i class="bi bi-camera me-1"></i>ถ่ายรูปใบหน้า
+            </button>
+            <button type="button" id="retakeBtn" class="btn btn-sm btn-outline-light d-none">
+              <i class="bi bi-arrow-counterclockwise me-1"></i>ถ่ายใหม่
+            </button>
+          </div>
+        </div>
+
+        <!-- Alert messages container -->
+        <div id="alertBox" class="alert d-none mb-3 py-2 px-3 small" role="alert"></div>
+
+        <!-- Consent & Submit Form -->
+        <form id="enrollForm">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" id="imageDataInput" name="image_data" value="">
+
+          <div class="card bg-light border-0 p-3 mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="consentCheck" name="consent" required>
+              <label class="form-check-label small" for="consentCheck">
+                <strong>หนังสือให้ความยินยอมข้อมูลชีวมิติ (Biometric Consent - PDPA):</strong>
+                ข้าพเจ้ายินยอมให้ระบบ SmartWork Hub บันทึกและประมวลผลข้อมูลชีวมิติใบหน้าเพื่อใช้ในการยืนยันตัวตนสำหรับการลงเวลาเข้าทำงานเท่านั้น โดยข้าพเจ้าทราบดีว่าสามารถเพิกถอนความยินยอมและลบข้อมูลใบหน้าได้ตลอดเวลาผ่านหน้าโปรไฟล์
+              </label>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between">
+            <a href="{{ url_for('attendance.check_in_out') }}" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-left me-1"></i>ย้อนกลับ
+            </a>
+            <button type="submit" id="saveEnrollBtn" class="btn btn-success px-4" disabled>
+              <i class="bi bi-shield-check me-1"></i>บันทึกการลงทะเบียนใบหน้า
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const video = document.getElementById('webcam');
+  const canvas = document.getElementById('snapshotCanvas');
+  const preview = document.getElementById('capturedPreview');
+  const faceGuide = document.getElementById('faceGuide');
+  const placeholder = document.getElementById('cameraPlaceholder');
+  const loading = document.getElementById('cameraLoading');
+  const controls = document.getElementById('cameraControls');
+  const startCamBtn = document.getElementById('startCamBtn');
+  const captureBtn = document.getElementById('captureBtn');
+  const retakeBtn = document.getElementById('retakeBtn');
+  const switchCamBtn = document.getElementById('switchCamBtn');
+  const saveEnrollBtn = document.getElementById('saveEnrollBtn');
+  const consentCheck = document.getElementById('consentCheck');
+  const alertBox = document.getElementById('alertBox');
+  const imageDataInput = document.getElementById('imageDataInput');
+  const enrollForm = document.getElementById('enrollForm');
+
+  let stream = null;
+  let currentFacingMode = 'user';
+  let capturedBase64 = null;
+
+  function showAlert(msg, type = 'danger') {
+    alertBox.className = `alert alert-${type} py-2 px-3 small`;
+    alertBox.textContent = msg;
+    alertBox.classList.remove('d-none');
+  }
+
+  function hideAlert() {
+    alertBox.classList.add('d-none');
+  }
+
+  async function startCamera() {
+    hideAlert();
+    placeholder.classList.add('d-none');
+    loading.classList.remove('d-none');
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      loading.classList.add('d-none');
+      placeholder.classList.remove('d-none');
+      showAlert('เบราว์เซอร์ของคุณไม่รองรับการเปิดกล้องเว็บแคม หรือไม่ได้เชื่อมต่อผ่าน HTTPS / localhost');
+      return;
+    }
+
+    try {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: currentFacingMode,
+          width: { ideal: 640 },
+          height: { ideal: 480 }
+        },
+        audio: false
+      });
+      video.srcObject = stream;
+      await video.play();
+
+      loading.classList.add('d-none');
+      video.style.display = 'block';
+      faceGuide.classList.remove('d-none');
+      controls.classList.remove('d-none');
+    } catch (err) {
+      loading.classList.add('d-none');
+      placeholder.classList.remove('d-none');
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        showAlert('คุณปฏิเสธการเข้าถึงกล้อง กรุณาอนุญาตสิทธิ์การใช้งานกล้องในเบราว์เซอร์');
+      } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+        showAlert('ไม่พบอุปกรณ์กล้องบนเครื่องของคุณ');
+      } else {
+        showAlert('ไม่สามารถเปิดกล้องได้: ' + err.message);
+      }
+    }
+  }
+
+  startCamBtn.addEventListener('click', startCamera);
+
+  switchCamBtn.addEventListener('click', function () {
+    currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+    startCamera();
+  });
+
+  captureBtn.addEventListener('click', function () {
+    if (!video.videoWidth) return;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    capturedBase64 = canvas.toDataURL('image/jpeg', 0.9);
+    imageDataInput.value = capturedBase64;
+
+    preview.src = capturedBase64;
+    preview.classList.remove('d-none');
+    video.style.display = 'none';
+    faceGuide.classList.add('d-none');
+
+    captureBtn.classList.add('d-none');
+    retakeBtn.classList.remove('d-none');
+
+    updateSubmitState();
+  });
+
+  retakeBtn.addEventListener('click', function () {
+    capturedBase64 = null;
+    imageDataInput.value = '';
+    preview.classList.add('d-none');
+    video.style.display = 'block';
+    faceGuide.classList.remove('d-none');
+
+    retakeBtn.classList.add('d-none');
+    captureBtn.classList.remove('d-none');
+
+    updateSubmitState();
+  });
+
+  function updateSubmitState() {
+    saveEnrollBtn.disabled = !(capturedBase64 && consentCheck.checked);
+  }
+
+  consentCheck.addEventListener('change', updateSubmitState);
+
+  enrollForm.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    if (!capturedBase64) {
+      showAlert('กรุณากดถ่ายรูปใบหน้าก่อนทำการบันทึก');
+      return;
+    }
+    if (!consentCheck.checked) {
+      showAlert('กรุณาทำเครื่องหมายยินยอมข้อมูลชีวมิติ (PDPA)');
+      return;
+    }
+
+    saveEnrollBtn.disabled = true;
+    saveEnrollBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>กำลังบันทึกและวิเคราะห์ใบหน้า...';
+    hideAlert();
+
+    try {
+      const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+      const res = await fetch("{{ url_for('attendance.face_enroll') }}", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+          image_data: capturedBase64,
+          consent: true
+        })
+      });
+
+      const result = await res.json();
+      if (result.success) {
+        showAlert(result.message, 'success');
+        if (stream) {
+          stream.getTracks().forEach(t => t.stop());
+        }
+        setTimeout(() => {
+          window.location.href = result.redirect_url || "{{ url_for('attendance.check_in_out') }}";
+        }, 1200);
+      } else {
+        showAlert(result.error || 'การลงทะเบียนไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+        saveEnrollBtn.disabled = false;
+        saveEnrollBtn.innerHTML = '<i class="bi bi-shield-check me-1"></i>บันทึกการลงทะเบียนใบหน้า';
+      }
+    } catch (err) {
+      showAlert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์: ' + err.message);
+      saveEnrollBtn.disabled = false;
+      saveEnrollBtn.innerHTML = '<i class="bi bi-shield-check me-1"></i>บันทึกการลงทะเบียนใบหน้า';
+    }
+  });
+
+  // Stop camera stream when navigating away
+  window.addEventListener('beforeunload', () => {
+    if (stream) stream.getTracks().forEach(t => t.stop());
+  });
+});
+</script>
+{% endblock %}

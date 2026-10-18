@@ -1,9 +1,25 @@
 :root {
-  --primary: #1d4ed8;
-  --primary-soft: #dfeaff;
-  --secondary: #0f172a;
-  --muted: #64748b;
-  --light: #f8fafc;
+  /* Modern Gen Z pastel palette */
+  --lavender: #c8b6ff;          /* Soft purple */
+  --soft-purple: #e5d9ff;       /* Lighter purple */
+  --baby-pink: #ffadc6;         /* Gentle pink */
+  --peach: #ffb28b;             /* Warm peach */
+  --sky-blue: #a0c4ff;           /* Calm sky */
+  --mint-green: #b5f5ec;         /* Fresh mint */
+  --background: #f7f9ff;        /* Light off‑white */
+
+  /* Core semantic colors derived from palette */
+  --sidebar-bg: linear-gradient(135deg, #243B91, #29245F);
+  --sidebar-active-bg: #7774E8;
+  --sidebar-active-color: #ffffff;
+  --sidebar-link-color: #ffffff;
+  --sidebar-hover-bg: rgba(255,255,255,0.2);
+
+  --primary: var(--lavender);
+  --primary-soft: var(--soft-purple);
+  --secondary: var(--sky-blue);
+  --muted: var(--mint-green);
+  --light: var(--background);
   --card: #ffffff;
   --success: #10b981;
   --warning: #f59e0b;
@@ -289,13 +305,7 @@ body {
   }
 }
 
-:root {
-  --primary: #5145cd;
-  --primary-soft: #efedff;
-  --secondary: #19213b;
-  --muted: #7c849e;
-  --border: #e8eaf4;
-}
+/* Removed duplicate root block – palette now defined only once above */
 
 body {
   min-height: 100vh;
@@ -312,32 +322,48 @@ body {
   width: 258px;
   flex-direction: column;
   padding: 26px 17px 18px;
-  background: #fff;
-  border-right: 1px solid #ececf4;
+  background: var(--sidebar-bg);
+  border-right: none;
+  box-shadow: 2px 0 12px rgba(0,0,0,0.2);
 }
 
-.sidebar-brand { display: flex; align-items: center; gap: 11px; margin: 0 8px 39px; color: #202744; font-size: 1.02rem; font-weight: 700; text-decoration: none; }
-.sidebar-brand small { display: block; margin-top: 2px; color: #9ba2b7; font-size: .55rem; font-weight: 600; letter-spacing: .12em; }
+.sidebar-brand { display: flex; align-items: center; gap: 11px; margin: 0 8px 39px; color: #FFFFFF; font-size: 1.02rem; font-weight: 700; text-decoration: none; }
+.sidebar-brand small { display: block; margin-top: 2px; color: #FFFFFF; font-size: .55rem; font-weight: 600; letter-spacing: .12em; }
 .brand-light { color: #736ce1; }
 .brand-mark { display: inline-flex; width: 39px; height: 39px; align-items: center; justify-content: center; border-radius: 13px; background: linear-gradient(140deg, #5145cd, #8f7cf8); color: #fff; font-size: 1.15rem; box-shadow: 0 7px 18px #5145cd38; }
-.sidebar-label { padding: 0 12px 11px; color: #a4a9ba; font-size: .68rem; font-weight: 600; letter-spacing: .08em; }
+.sidebar-label { padding: 0 12px 11px; color: #FFFFFF; font-size: .68rem; font-weight: 600; letter-spacing: .08em; }
 .sidebar-nav { display: grid; gap: 5px; }
-.sidebar-nav a { display: flex; align-items: center; gap: 13px; padding: 11px 13px; border-radius: 11px; color: #6d748d; font-size: .91rem; font-weight: 500; text-decoration: none; transition: .18s ease; }
+.sidebar-nav a {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 11px 13px;
+  border-radius: 11px;
+  color: var(--sidebar-link-color);
+  font-size: .91rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: .18s ease;
+}
 .sidebar-nav a i { width: 19px; font-size: 1.05rem; }
-.sidebar-nav a:hover { color: #5145cd; background: #f7f6ff; }
-.sidebar-nav a.active { color: #5145cd; background: #f0efff; font-weight: 600; }
-.sidebar-bottom { margin-top: auto; border-top: 1px solid #f0f1f6; padding-top: 15px; }
+.sidebar-nav a:hover { color: var(--sidebar-active-color); background: var(--sidebar-hover-bg); }
+.sidebar-nav a.active { color: var(--sidebar-active-color); background: var(--sidebar-active-bg); font-weight: 600; }
+.sidebar-bottom {
+  margin-top: auto;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  padding-top: 15px;
+}
 .sidebar-user { display: flex; align-items: center; gap: 10px; }
-.user-avatar { display: flex; width: 37px; height: 37px; align-items: center; justify-content: center; border-radius: 12px; background: linear-gradient(135deg,#b8b6ff,#6e62df); color: #fff; font-weight: 700; }
+.user-avatar { display: flex; width: 37px; height: 37px; align-items: center; justify-content: center; border-radius: 12px; background: linear-gradient(135deg, #29245F, #37318A); color: #fff; font-weight: 700; }
 .user-meta { display: grid; flex: 1; min-width: 0; }
-.user-meta strong { overflow: hidden; color: #303750; font-size: .78rem; text-overflow: ellipsis; white-space: nowrap; }
-.user-meta small { color: #969cb0; font-size: .68rem; }
-.sidebar-user > a { color: #989eb1; }
+.user-meta strong { overflow: hidden; color: #ffffff; font-size: .78rem; text-overflow: ellipsis; white-space: nowrap; }
+.user-meta small { color: #FFFFFF; font-size: .68rem; }
+.sidebar-user > a { color: #FFFFFF; }
 .app-shell { min-height: 100vh; margin-left: 258px; }
 .topbar { position: sticky; top: 0; z-index: 1020; display: flex; height: 70px; align-items: center; padding: 0 38px; background: #ffffffeb; border-bottom: 1px solid #edeef5; backdrop-filter: blur(12px); }
 .topbar-caption { color: #4d5570; font-size: .9rem; font-weight: 600; }
 .topbar-date,.topbar-action { color: #858ca2; font-size: .85rem; text-decoration: none; }
-.page-content { width: min(1440px,100%); min-height: calc(100vh - 125px); margin: auto; padding: 34px 40px 48px; }
+.page-content { width: min(1440px,100%); min-height: calc(100vh - 125px); margin: auto; padding: 34px 40px 48px; background: var(--light); }
 .footer { display: flex; min-height: 55px; align-items: center; justify-content: center; padding: 12px; color: #9da3b4; font-size: .75rem; background: transparent; }
 .public-shell { min-height: 100vh; background: radial-gradient(ellipse at 82% 9%,#ebeaff 0,transparent 34%),#f8f9fd; }
 .public-nav { background: #ffffffdf; backdrop-filter: blur(12px); }
@@ -441,3 +467,114 @@ body {
   .hero-decoration { top: auto; right: 6%; bottom: -27px; transform: scale(.67); transform-origin: bottom right; }
   .hero-copy p { max-width: 310px; font-size: .86rem; }
 }
+
+/* Biometric Camera & Face Guidelines */
+.pointer-events-none {
+  pointer-events: none;
+}
+
+#checkInCamContainer video,
+#webcam {
+  transform: scaleX(-1);
+}
+
+#capturedPreview {
+  transform: scaleX(-1);
+}
+
+@media (max-width: 576px) {
+  #faceGuide {
+    width: 170px !important;
+    height: 220px !important;
+  }
+  .display-3 {
+    font-size: 2.2rem !important;
+  }
+  .table-responsive {
+    font-size: 0.85rem;
+  }
+}
+
+/* Login page custom styles */
+.login-bg {
+  position: relative;
+  background-image: url('{{ url_for('static', filename='img/city_skyline.jpg') }}');
+  background-size: cover;
+  background-position: center;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.login-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom left, rgba(12,30,70,0.6), rgba(20,50,100,0.4), rgba(255,215,0,0.15));
+  pointer-events: none;
+}
+.glass-card {
+  position: relative;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(12px);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+}
+.form-control:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(86, 203, 255, 0.5);
+}
+.focus-glow {
+  box-shadow: 0 0 0 3px rgba(132, 95, 255, 0.5) !important;
+}
+.login-success-check {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  padding: 1.2rem 2rem;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  opacity: 1;
+  transition: opacity 0.6s ease;
+  z-index: 1050;
+}
+.login-success-check.fade-out {
+  opacity: 0;
+}
+@media (max-width: 576px) {
+  .glass-card { padding: 2rem 1rem; }
+  .login-bg .d-flex { padding: 0 1rem; }
+}
+
+/* Login page container */
+.login-container {
+  width: 100%;
+  max-width: 460px; /* desktop width */
+  padding: 0 1rem;
+  box-sizing: border-box;
+  margin: 0 auto;
+}
+
+/* Prevent aggressive word breaking for Thai text */
+.login-container {
+  word-break: keep-all; /* avoid breaking between characters */
+  overflow-wrap: anywhere; /* allow line break at whitespace */
+}
+
+
+.login-container .glass-card {
+  width: 100%;
+}
+
+@media (max-width: 576px) {
+  .login-container {
+    max-width: 90%;
+  }
+}
+

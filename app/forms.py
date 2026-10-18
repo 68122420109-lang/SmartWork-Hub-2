@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from flask_wtf import FlaskForm
+from flask_wtf.file import FileAllowed, FileField, FileSize, MultipleFileField
 from wtforms import (
     DateField,
     DateTimeField,
@@ -120,11 +121,28 @@ class LeaveRequestForm(FlaskForm):
     start_date = DateField('วันที่เริ่มลา', format='%Y-%m-%d', validators=[DataRequired(message='กรุณาระบุวันที่เริ่มลา')])
     end_date = DateField('วันที่สิ้นสุดลา', format='%Y-%m-%d', validators=[DataRequired(message='กรุณาระบุวันที่สิ้นสุดลา')])
     reason = TextAreaField('เหตุผลการลา', validators=[DataRequired(message='กรุณาระบุเหตุผลการลา'), Length(min=5, max=1000, message='เหตุผลต้องมี 5–1,000 ตัวอักษร')])
+    attachments = MultipleFileField('เอกสาร / รูปภาพแนบ (เลือกหลายไฟล์)', validators=[
+        Optional(),
+        FileAllowed(['jpg', 'jpeg', 'png', 'webp', 'pdf'], 'รองรับเฉพาะไฟล์รูปภาพ (JPG, PNG, WEBP) หรือเอกสาร PDF เท่านั้น'),
+        FileSize(max_size=5 * 1024 * 1024, message='ขนาดไฟล์ต้องไม่เกิน 5 MB')
+    ])
     submit = SubmitField('ยื่นคำขอลา')
 
     def validate_end_date(self, end_date):
         if self.start_date.data and end_date.data and end_date.data < self.start_date.data:
             raise ValidationError('วันที่สิ้นสุดลาต้องไม่น้อยกว่าวันที่เริ่มลา')
+
+
+class ProfileForm(FlaskForm):
+    full_name = StringField('ชื่อ-นามสกุล', validators=[DataRequired(message='กรุณากรอกชื่อ-นามสกุล'), Length(min=2, max=120, message='ความยาว 2–120 ตัวอักษร')])
+    phone = StringField('เบอร์โทรศัพท์ติดต่อ', validators=[Optional(), Length(max=30, message='เบอร์โทรศัพท์ต้องไม่เกิน 30 ตัวอักษร')])
+    avatar = FileField('รูปภาพโปรไฟล์', validators=[
+        Optional(),
+        FileAllowed(['jpg', 'jpeg', 'png', 'webp'], 'รองรับเฉพาะไฟล์ภาพ JPG, PNG หรือ WEBP เท่านั้น'),
+        FileSize(max_size=5 * 1024 * 1024, message='ขนาดไฟล์รูปภาพต้องไม่เกิน 5 MB')
+    ])
+    submit = SubmitField('บันทึกข้อมูลโปรไฟล์')
+
 
 
 class AttendanceAdjustmentForm(FlaskForm):
