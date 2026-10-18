@@ -8,3 +8,6 @@ venv/
 .env.*
 *.sqlite3
 .DS_Store
+
+# Copied from app/static at build time
+frontend-static/static/
